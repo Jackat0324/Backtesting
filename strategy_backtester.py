@@ -3,6 +3,7 @@ import pandas as pd
 from pathlib import Path
 from datetime import datetime, timedelta
 import logging
+import strategies
 
 # 預設資料庫路徑 (假設與 reader.py 同目錄下的 data/twse_data.db)
 # 預設資料庫路徑 (假設與 reader.py 同目錄下的 data/twse_data.db)
@@ -101,48 +102,12 @@ class StrategyBacktester:
             df_stock['MA20'] = df_stock['收盤'].rolling(window=20).mean()
             
             for strategy_type in strategy_types:
-                df_stock['Signal'] = False
-                
-                if strategy_type == 'MA5_MA10_Flat':
-                    ma5_pct = df_stock['MA5'].pct_change(fill_method=None).abs()
-                    ma10_pct = df_stock['MA10'].pct_change(fill_method=None).abs()
-                    flat_today = (ma5_pct == 0) & (ma10_pct == 0)
-                    flat_prev = (ma5_pct.shift(1) == 0) & (ma10_pct.shift(1) == 0)
-                    df_stock['Signal'] = flat_today & flat_prev
-
-                elif strategy_type == 'MA10_MA20_Flat':
-                    ma10_pct = df_stock['MA10'].pct_change(fill_method=None).abs()
-                    ma20_pct = df_stock['MA20'].pct_change(fill_method=None).abs()
-                    flat_today = (ma10_pct == 0) & (ma20_pct == 0)
-                    flat_prev = (ma10_pct.shift(1) == 0) & (ma20_pct.shift(1) == 0)
-                    df_stock['Signal'] = flat_today & flat_prev
-
-                elif strategy_type == 'MA5_MA20_Flat':
-                    ma5_pct = df_stock['MA5'].pct_change(fill_method=None).abs()
-                    ma20_pct = df_stock['MA20'].pct_change(fill_method=None).abs()
-                    flat_today = (ma5_pct == 0) & (ma20_pct == 0)
-                    flat_prev = (ma5_pct.shift(1) == 0) & (ma20_pct.shift(1) == 0)
-                    df_stock['Signal'] = flat_today & flat_prev
-
-                elif strategy_type == 'MA5_Eq_MA10_2Days':
-                    diff_pct = (df_stock['MA5'] - df_stock['MA10']).abs() / df_stock['MA10']
-                    eq_today = diff_pct == 0
-                    eq_prev = diff_pct.shift(1) == 0
-                    df_stock['Signal'] = eq_today & eq_prev
-
-                elif strategy_type == 'MA10_Eq_MA20_2Days':
-                    diff_pct = (df_stock['MA10'] - df_stock['MA20']).abs() / df_stock['MA20']
-                    eq_today = diff_pct == 0
-                    eq_prev = diff_pct.shift(1) == 0
-                    df_stock['Signal'] = eq_today & eq_prev
-
-                elif strategy_type == 'MA5_Eq_MA20_2Days':
-                    diff_pct = (df_stock['MA5'] - df_stock['MA20']).abs() / df_stock['MA20']
-                    eq_today = diff_pct == 0
-                    eq_prev = diff_pct.shift(1) == 0
-                    df_stock['Signal'] = eq_today & eq_prev
-                else:
+                strategy_obj = strategies.get_strategy(strategy_type)
+                if not strategy_obj:
+                    logger.warning(f"Strategy {strategy_type} not found.")
                     continue
+                
+                df_stock['Signal'] = strategy_obj.calculate_signals(df_stock)
                 
                 signals = df_stock[df_stock['Signal']].copy()
                 if signals.empty:
@@ -254,75 +219,12 @@ class StrategyBacktester:
             df_weekly['MA60'] = df_weekly['收盤'].rolling(window=60).mean()
 
             for strategy_type in strategy_types:
-                df_weekly['Signal'] = False
-
-                if strategy_type == '60_5_20_10_to_60_5_10_20':
-                    # T-1
-                    c1_prev = (df_weekly['MA60'].shift(1) > df_weekly['MA5'].shift(1)) & \
-                              (df_weekly['MA5'].shift(1) > df_weekly['MA20'].shift(1)) & \
-                              (df_weekly['MA20'].shift(1) > df_weekly['MA10'].shift(1))
-                    # T
-                    c1_curr = (df_weekly['MA60'] > df_weekly['MA5']) & \
-                              (df_weekly['MA5'] > df_weekly['MA10']) & \
-                              (df_weekly['MA10'] > df_weekly['MA20'])
-                    df_weekly['Signal'] = c1_prev & c1_curr
-
-                elif strategy_type == '60_5_10_20_to_5_60_10_20':
-                    # T-1: 60 > 5 > 10 > 20
-                    c1_prev = (df_weekly['MA60'].shift(1) > df_weekly['MA5'].shift(1)) & \
-                              (df_weekly['MA5'].shift(1) > df_weekly['MA10'].shift(1)) & \
-                              (df_weekly['MA10'].shift(1) > df_weekly['MA20'].shift(1))
-                    # T: 5 > 60 > 10 > 20
-                    c1_curr = (df_weekly['MA5'] > df_weekly['MA60']) & \
-                              (df_weekly['MA60'] > df_weekly['MA10']) & \
-                              (df_weekly['MA10'] > df_weekly['MA20'])
-                    df_weekly['Signal'] = c1_prev & c1_curr
-
-                elif strategy_type == '60_5_20_10_to_5_60_20_10':
-                    # T-1: 60 > 5 > 20 > 10
-                    c1_prev = (df_weekly['MA60'].shift(1) > df_weekly['MA5'].shift(1)) & \
-                              (df_weekly['MA5'].shift(1) > df_weekly['MA20'].shift(1)) & \
-                              (df_weekly['MA20'].shift(1) > df_weekly['MA10'].shift(1))
-                    # T: 5 > 60 > 20 > 10
-                    c1_curr = (df_weekly['MA5'] > df_weekly['MA60']) & \
-                              (df_weekly['MA60'] > df_weekly['MA20']) & \
-                              (df_weekly['MA20'] > df_weekly['MA10'])
-                    df_weekly['Signal'] = c1_prev & c1_curr
-
-                elif strategy_type == '60_20_5_10_to_60_5_20_10':
-                    # T-1: 60 > 20 > 5 > 10
-                    c1_prev = (df_weekly['MA60'].shift(1) > df_weekly['MA20'].shift(1)) & \
-                              (df_weekly['MA20'].shift(1) > df_weekly['MA5'].shift(1)) & \
-                              (df_weekly['MA5'].shift(1) > df_weekly['MA10'].shift(1))
-                    # T: 60 > 5 > 20 > 10
-                    c1_curr = (df_weekly['MA60'] > df_weekly['MA5']) & \
-                              (df_weekly['MA5'] > df_weekly['MA20']) & \
-                              (df_weekly['MA20'] > df_weekly['MA10'])
-                    df_weekly['Signal'] = c1_prev & c1_curr
-
-                elif strategy_type == '20_60_5_10_to_5_60_20_10':
-                    # T-1: 20 > 60 > 5 > 10
-                    c1_prev = (df_weekly['MA20'].shift(1) > df_weekly['MA60'].shift(1)) & \
-                              (df_weekly['MA60'].shift(1) > df_weekly['MA5'].shift(1)) & \
-                              (df_weekly['MA5'].shift(1) > df_weekly['MA10'].shift(1))
-                    # T: 5 > 60 > 20 > 10
-                    c1_curr = (df_weekly['MA5'] > df_weekly['MA60']) & \
-                              (df_weekly['MA60'] > df_weekly['MA20']) & \
-                              (df_weekly['MA20'] > df_weekly['MA10'])
-                    df_weekly['Signal'] = c1_prev & c1_curr
-
-                elif strategy_type == '20_10_5_60_to_20_5_10_60':
-                    # T-1: 20 > 10 > 5 > 60
-                    c1_prev = (df_weekly['MA20'].shift(1) > df_weekly['MA10'].shift(1)) & \
-                              (df_weekly['MA10'].shift(1) > df_weekly['MA5'].shift(1)) & \
-                              (df_weekly['MA5'].shift(1) > df_weekly['MA60'].shift(1))
-                    # T: 20 > 5 > 10 > 60
-                    c1_curr = (df_weekly['MA20'] > df_weekly['MA5']) & \
-                              (df_weekly['MA5'] > df_weekly['MA10']) & \
-                              (df_weekly['MA10'] > df_weekly['MA60'])
-                    df_weekly['Signal'] = c1_prev & c1_curr
-                else:
+                strategy_obj = strategies.get_strategy(strategy_type)
+                if not strategy_obj:
+                    logging.warning(f"Strategy {strategy_type} not found.")
                     continue
+                
+                df_weekly['Signal'] = strategy_obj.calculate_signals(df_weekly)
 
                 signals = df_weekly[df_weekly['Signal']].copy()
                 if signals.empty:
@@ -362,7 +264,7 @@ if __name__ == "__main__":
     try:
         print("Running test scan...")
         # 測試最近是否有訊號
-        df_res = bt.run_scan('5MA_cross_10MA', latest_only=True)
+        df_res = bt.run_scan('MA5_MA10_Flat', latest_only=True)
         print("Latest Signals:", len(df_res))
         if not df_res.empty:
             print(df_res.head())
