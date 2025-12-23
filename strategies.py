@@ -68,7 +68,12 @@ class WeeklySequenceStrategy(BaseStrategy):
     def calculate_signals(self, df: pd.DataFrame) -> pd.Series:
         c_prev = self._check_sequence(df, self.prev_seq, shift=1)
         c_curr = self._check_sequence(df, self.curr_seq, shift=0)
-        return c_prev & c_curr
+        
+        # 新增條件：T 的 5MA > T-1 的 5MA 且 T 的 10MA > T-1 的 10MA
+        trend_ma5 = df['MA5'] > df['MA5'].shift(1)
+        trend_ma10 = df['MA10'] > df['MA10'].shift(1)
+        
+        return c_prev & c_curr & trend_ma5 & trend_ma10
 
 # --- Strategy Lists for GUI ---
 
