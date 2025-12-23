@@ -8,6 +8,7 @@ import traceback
 import logging
 
 import strategy_backtester
+import strategies
 import csv
 
 # 嘗試匯入 reader (Data Manager)
@@ -200,15 +201,8 @@ class StrategyFrame(ttk.Frame):
         # Strategy Helper
         ttk.Label(control_frame, text="選擇策略:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
         self.strategy_listbox = tk.Listbox(control_frame, selectmode=tk.MULTIPLE, height=4, width=40, exportselection=0)
-        strategies = [
-            'MA5_MA10_Flat',
-            'MA10_MA20_Flat',
-            'MA5_MA20_Flat',
-            'MA5_Eq_MA10_2Days',
-            'MA10_Eq_MA20_2Days',
-            'MA5_Eq_MA20_2Days'
-        ]
-        for s in strategies:
+        strategies_list = strategies.DAILY_STRATEGIES
+        for s in strategies_list:
             self.strategy_listbox.insert(tk.END, s)
         self.strategy_listbox.select_set(0) # 預設選中第一個
         
@@ -658,15 +652,8 @@ class WeeklyStrategyFrame(StrategyFrame):
         # 由於繼承自 StrategyFrame，已經有 self.strategy_cb, self.tree 等元件
         # 1. 更新策略列表
         self.strategy_listbox.delete(0, tk.END)
-        strategies = [
-            '60_5_20_10_to_60_5_10_20',
-            '60_5_10_20_to_5_60_10_20',
-            '60_5_20_10_to_5_60_20_10',
-            '60_20_5_10_to_60_5_20_10',
-            '20_60_5_10_to_5_60_20_10',
-            '20_10_5_60_to_20_5_10_60'
-        ]
-        for s in strategies:
+        strategies_list = strategies.WEEKLY_STRATEGIES
+        for s in strategies_list:
             self.strategy_listbox.insert(tk.END, s)
         self.strategy_listbox.select_set(0)
         
