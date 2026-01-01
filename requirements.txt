@@ -1,7 +1,5 @@
-streamlit==1.52.1
+streamlit
 pandas
 numpy
 matplotlib
-sqlite3
-# openpyxl (if excel export is needed)
 openpyxl
