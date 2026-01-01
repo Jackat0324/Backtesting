@@ -75,6 +75,33 @@ class WeeklySequenceStrategy(BaseStrategy):
         
         return c_prev & c_curr & trend_ma5 & trend_ma10
 
+class ThreeWeekSequenceStrategy(BaseStrategy):
+    def __init__(self, t2_seq: list, t1_seq: list, t0_seq: list):
+        self.t2_seq = [f'MA{p}' for p in t2_seq]
+        self.t1_seq = [f'MA{p}' for p in t1_seq]
+        self.t0_seq = [f'MA{c}' for c in t0_seq]
+
+    def _check_sequence(self, df, seq, shift=0):
+        conditions = []
+        for i in range(len(seq) - 1):
+            conditions.append(df[seq[i]].shift(shift) > df[seq[i+1]].shift(shift))
+        
+        res = conditions[0]
+        for c in conditions[1:]:
+            res = res & c
+        return res
+
+    def calculate_signals(self, df: pd.DataFrame) -> pd.Series:
+        c_t2 = self._check_sequence(df, self.t2_seq, shift=2)
+        c_t1 = self._check_sequence(df, self.t1_seq, shift=1)
+        c_t0 = self._check_sequence(df, self.t0_seq, shift=0)
+        
+        # 條件：T 的 5MA > T-1 的 5MA 且 T 的 10MA > T-1 的 10MA
+        trend_ma5 = df['MA5'] > df['MA5'].shift(1)
+        trend_ma10 = df['MA10'] > df['MA10'].shift(1)
+        
+        return c_t2 & c_t1 & c_t0 & trend_ma5 & trend_ma10
+
 # --- Strategy Lists for GUI ---
 
 DAILY_STRATEGIES = [
@@ -93,7 +120,15 @@ WEEKLY_STRATEGIES = [
     '60_5_20_10_to_5_60_20_10',
     '60_20_5_10_to_60_5_20_10',
     '20_60_5_10_to_5_60_20_10',
-    '20_10_5_60_to_20_5_10_60'
+    '20_10_5_60_to_20_5_10_60',
+    '60_10_5_20_to_60_5_10_20',
+    '60_10_5_20_to_5_60_10_20',
+    '60_10_5_20_to_5_10_60_20',
+    '60_20_5_10_to_5_60_20_10',
+    '60_5_20_10_to_5_60_10_20',
+    '10_5_20_60_to_5_10_20_60',
+    '10_5_20_60_to_10_20_5_60',
+    '5_10_20_60_to_10_5_20_60_to_5_10_20_60'
 ]
 
 # --- Strategy Factory / Registry ---
@@ -115,6 +150,14 @@ STRATEGY_MAP = {
     '60_20_5_10_to_60_5_20_10': WeeklySequenceStrategy([60, 20, 5, 10], [60, 5, 20, 10]),
     '20_60_5_10_to_5_60_20_10': WeeklySequenceStrategy([20, 60, 5, 10], [5, 60, 20, 10]),
     '20_10_5_60_to_20_5_10_60': WeeklySequenceStrategy([20, 10, 5, 60], [20, 5, 10, 60]),
+    '60_10_5_20_to_60_5_10_20': WeeklySequenceStrategy([60, 10, 5, 20], [60, 5, 10, 20]),
+    '60_10_5_20_to_5_60_10_20': WeeklySequenceStrategy([60, 10, 5, 20], [5, 60, 10, 20]),
+    '60_10_5_20_to_5_10_60_20': WeeklySequenceStrategy([60, 10, 5, 20], [5, 10, 60, 20]),
+    '60_20_5_10_to_5_60_20_10': WeeklySequenceStrategy([60, 20, 5, 10], [5, 60, 20, 10]),
+    '60_5_20_10_to_5_60_10_20': WeeklySequenceStrategy([60, 5, 20, 10], [5, 60, 10, 20]),
+    '10_5_20_60_to_5_10_20_60': WeeklySequenceStrategy([10, 5, 20, 60], [5, 10, 20, 60]),
+    '10_5_20_60_to_10_20_5_60': WeeklySequenceStrategy([10, 5, 20, 60], [10, 20, 5, 60]),
+    '5_10_20_60_to_10_5_20_60_to_5_10_20_60': ThreeWeekSequenceStrategy([5, 10, 20, 60], [10, 5, 20, 60], [5, 10, 20, 60]),
 }
 
 def get_strategy(name: str) -> BaseStrategy:
