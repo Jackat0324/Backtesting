@@ -20,9 +20,15 @@ class FlatMAStrategy(BaseStrategy):
     def calculate_signals(self, df: pd.DataFrame) -> pd.Series:
         ma1_pct = df[self.ma1].pct_change(fill_method=None).abs()
         ma2_pct = df[self.ma2].pct_change(fill_method=None).abs()
-        flat_today = (ma1_pct == 0) & (ma2_pct == 0)
-        flat_prev = (ma1_pct.shift(1) == 0) & (ma2_pct.shift(1) == 0)
-        return flat_today & flat_prev
+        
+        # 前兩天 (T-1, T-2) 平整
+        flat_t1 = (ma1_pct.shift(1) == 0) & (ma2_pct.shift(1) == 0)
+        flat_t2 = (ma1_pct.shift(2) == 0) & (ma2_pct.shift(2) == 0)
+        
+        # 第三天 (T) MA5 與 MA10 向上
+        trend = (df['MA5'] > df['MA5'].shift(1)) & (df['MA10'] > df['MA10'].shift(1))
+        
+        return flat_t1 & flat_t2 & trend
 
 class EqMA2DaysStrategy(BaseStrategy):
     def __init__(self, ma1: int, ma2: int):
@@ -31,9 +37,15 @@ class EqMA2DaysStrategy(BaseStrategy):
 
     def calculate_signals(self, df: pd.DataFrame) -> pd.Series:
         diff_pct = (df[self.ma1] - df[self.ma2]).abs() / df[self.ma2]
-        eq_today = diff_pct == 0
-        eq_prev = diff_pct.shift(1) == 0
-        return eq_today & eq_prev
+        
+        # 前兩天 (T-1, T-2) 相等
+        eq_t1 = diff_pct.shift(1) == 0
+        eq_t2 = diff_pct.shift(2) == 0
+        
+        # 第三天 (T) MA5 與 MA10 向上
+        trend = (df['MA5'] > df['MA5'].shift(1)) & (df['MA10'] > df['MA10'].shift(1))
+        
+        return eq_t1 & eq_t2 & trend
 
 class CrossMAStrategy(BaseStrategy):
     def __init__(self, short_ma: int, long_ma: int):
