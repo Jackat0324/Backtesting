@@ -25,12 +25,14 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run data reader
-        run: python reader.py
+        run: |
+          mkdir -p data
+          python reader.py
 
       - name: Commit and push changes
         run: |
           git config --global user.name "GitHub Action"
           git config --global user.email "action@github.com"
-          git add data/twse_data.db
+          git add -f data/twse_data.db
           git commit -m "Automated data update: $(date +'%Y-%m-%d')" || exit 0
           git push
