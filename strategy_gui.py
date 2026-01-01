@@ -199,7 +199,12 @@ class StrategyFrame(ttk.Frame):
         control_frame.pack(fill=tk.X, pady=5)
         
         # Strategy Helper
-        ttk.Label(control_frame, text="選擇策略:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
+        lbl_select = ttk.Label(control_frame, text="選擇策略:")
+        lbl_select.grid(row=0, column=0, padx=5, pady=2, sticky="w")
+        
+        self.btn_toggle_select = ttk.Button(control_frame, text="全選/取消", width=10, command=self.toggle_select_all)
+        self.btn_toggle_select.grid(row=1, column=0, padx=5, pady=2, sticky="nw")
+        
         self.strategy_listbox = tk.Listbox(control_frame, selectmode=tk.MULTIPLE, height=4, width=40, exportselection=0)
         strategies_list = strategies.DAILY_STRATEGIES
         for s in strategies_list:
@@ -216,9 +221,9 @@ class StrategyFrame(ttk.Frame):
         
         # Mode Selection
         ttk.Label(control_frame, text="執行模式:").grid(row=0, column=3, padx=10, pady=5, sticky="w")
-        self.latest_only_var = tk.BooleanVar(value=False)
-        self.chk_latest = ttk.Checkbutton(control_frame, text="僅查看最新交易日訊號", variable=self.latest_only_var, command=self.toggle_dates)
-        self.chk_latest.grid(row=0, column=4, padx=5, pady=5, sticky="w")
+        self.backtest_var = tk.BooleanVar(value=False)
+        self.chk_backtest = ttk.Checkbutton(control_frame, text="回測", variable=self.backtest_var, command=self.toggle_dates)
+        self.chk_backtest.grid(row=0, column=4, padx=5, pady=5, sticky="w")
         
         # Date Range
         self.date_frame = ttk.Frame(control_frame)
@@ -331,6 +336,8 @@ class StrategyFrame(ttk.Frame):
             self.plotter = plotter.StockPlotter()
         else:
             self.plotter = None
+            
+        self.toggle_dates()
     
     def treeview_sort_column(self, col, reverse):
         """點擊標題排序功能"""
@@ -347,13 +354,25 @@ class StrategyFrame(ttk.Frame):
             self.tree.move(k, '', index)
         self.tree.heading(col, command=lambda: self.treeview_sort_column(col, not reverse))
 
-    def toggle_dates(self):
-        if self.latest_only_var.get():
-            self.start_entry.config(state='disabled')
-            self.end_entry.config(state='disabled')
+    def toggle_select_all(self):
+        """切換全選或全取消選取"""
+        current_selection = self.strategy_listbox.curselection()
+        total_items = self.strategy_listbox.size()
+        
+        if len(current_selection) == total_items:
+            # 如果已經全選，則全部取消
+            self.strategy_listbox.selection_clear(0, tk.END)
         else:
+            # 否則全部選取
+            self.strategy_listbox.selection_set(0, tk.END)
+
+    def toggle_dates(self):
+        if self.backtest_var.get():
             self.start_entry.config(state='normal')
             self.end_entry.config(state='normal')
+        else:
+            self.start_entry.config(state='disabled')
+            self.end_entry.config(state='disabled')
 
     def update_progress(self, current, total):
         """Update progress bar in main thread"""
@@ -370,7 +389,7 @@ class StrategyFrame(ttk.Frame):
             return
         
         strategies = [self.strategy_listbox.get(i) for i in selected_indices]
-        latest_only = self.latest_only_var.get()
+        latest_only = not self.backtest_var.get()
         start = self.start_entry.get()
         end = self.end_entry.get()
         
