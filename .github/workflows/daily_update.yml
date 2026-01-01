@@ -30,7 +30,7 @@ jobs:
       - name: Run data reader
         run: |
           mkdir -p data
-          python reader.py
+          python reader.py --days 600
 
       - name: Commit and push changes
         run: |

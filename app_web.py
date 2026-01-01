@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from datetime import date, timedelta, datetime
+import sqlite3
 import strategy_backtester
 import strategies
 import logging
@@ -66,6 +67,25 @@ def main():
 
     # 執行按鈕
     run_button = st.sidebar.button("🔍 開始執行掃描", type="primary", use_container_width=True)
+
+    # --- Data Health Check (Sidebar) ---
+    st.sidebar.divider()
+    with st.sidebar.expander("📊 數據庫狀態", expanded=False):
+        try:
+            with sqlite3.connect(bt.db_path) as conn:
+                df_info = pd.read_sql("SELECT MIN(日期) as start, MAX(日期) as end, COUNT(*) as count FROM stock_prices", conn)
+                st.write(f"**資料筆數**: {df_info['count'][0]:,}")
+                st.write(f"**起始日期**: {df_info['start'][0]}")
+                st.write(f"**最後日期**: {df_info['end'][0]}")
+                
+                # 簡單檢查週線數據是否足夠 (MA60 需要約 300 交易日)
+                days_count = pd.read_sql("SELECT COUNT(DISTINCT 日期) as d_count FROM stock_prices", conn)['d_count'][0]
+                if days_count < 300 and is_weekly:
+                    st.warning("⚠️ 數據不足 300 天，週線 MA60 策略可能無法產生訊號。")
+                elif days_count >= 300:
+                    st.success("✅ 數據充足")
+        except:
+            st.error("無法讀取資料庫狀態")
 
     # --- Main Content ---
     if run_button:
