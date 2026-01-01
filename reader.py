@@ -78,7 +78,10 @@ def setup_logging(log_level: str, data_dir: Path) -> None:
 # Requests Session with Retry
 # ---------------------------
 
-def make_session(max_retries: int = 3, backoff: float = 0.5, timeout: int = 12) -> requests.Session:
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+def make_session(max_retries: int = 3, backoff: float = 0.5, timeout: int = 12, verify: bool = True) -> requests.Session:
     s = requests.Session()
     retry = Retry(
         total=max_retries,
@@ -94,13 +97,15 @@ def make_session(max_retries: int = 3, backoff: float = 0.5, timeout: int = 12) 
     s.mount("http://", adapter)
     s.mount("https://", adapter)
     s.headers.update({"User-Agent": "Mozilla/5.0"})
-    s.request = _with_timeout(s.request, timeout)  # inject default timeout
+    s.request = _with_timeout_and_verify(s.request, timeout, verify)  # inject default timeout & verify
     return s
 
-def _with_timeout(request_func, timeout: int):
+def _with_timeout_and_verify(request_func, timeout: int, verify: bool):
     def wrapper(method, url, **kwargs):
         if "timeout" not in kwargs:
             kwargs["timeout"] = timeout
+        if "verify" not in kwargs:
+            kwargs["verify"] = verify
         return request_func(method, url, **kwargs)
     return wrapper
 
@@ -461,7 +466,7 @@ def as_rows(df: pd.DataFrame) -> Iterable[Tuple]:
 
 def run(args) -> None:
     setup_logging(args.log_level, Path(args.data_dir))
-    session = make_session(max_retries=args.max_retries, backoff=0.6, timeout=12)
+    session = make_session(max_retries=args.max_retries, backoff=0.6, timeout=12, verify=not args.no_verify)
 
     data_dir = Path(args.data_dir)
     db_path = Path(args.db_path) if args.db_path else DEFAULT_DB_PATH
@@ -545,6 +550,7 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     p.add_argument("--db-path", default=str(DEFAULT_DB_PATH), help="SQLite 路徑")
     p.add_argument("--refresh-calendar", action="store_true", help="忽略快取，強制重新抓取交易日行事曆")
     p.add_argument("--halt-on-fail", type=int, default=20, help="連續抓取失敗達指定次數後提前停止（0 表示不停）")
+    p.add_argument("--no-verify", action="store_true", help="停用 SSL 憑證驗證 (慎用)")
     return p.parse_args(argv)
 
 if __name__ == "__main__":
