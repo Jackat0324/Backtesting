@@ -1,0 +1,7 @@
+streamlit==1.52.1
+pandas
+numpy
+matplotlib
+sqlite3
+# openpyxl (if excel export is needed)
+openpyxl
