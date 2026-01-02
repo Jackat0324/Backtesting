@@ -39,3 +39,9 @@ jobs:
           git add -f data/twse_data.db
           git commit -m "Automated data update: $(date +'%Y-%m-%d')" || exit 0
           git push
+
+      - name: Notify Discord
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          python discord_notify.py
