@@ -159,6 +159,7 @@ class DataManagerFrame(ttk.Frame):
             args.from_cache_only = False
             args.refresh_calendar = False
             args.halt_on_fail = 20
+            args.no_verify = False
 
             reader.run(args)
             
