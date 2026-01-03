@@ -41,69 +41,76 @@ def get_backtester():
     return strategy_backtester.StrategyBacktester()
 
 def render_chart_streamlit(code, name, signal_date, frequency, db_path, strategy_name=""):
-    """在 Streamlit 中渲染 K 線圖"""
-    p = plotter.StockPlotter(db_path)
-    df = p.get_stock_data(code, center_date=signal_date, frequency=frequency)
-    
-    if df is None or df.empty:
-        st.error(f"找不到 {code} {name} 的資料庫數據")
-        return
+    """在 Streamlit 中渲染 K 線圖 (加強版：包含錯誤處理與 Linux 字型支援)"""
+    try:
+        p = plotter.StockPlotter(db_path)
+        df = p.get_stock_data(code, center_date=signal_date, frequency=frequency)
+        
+        if df is None or df.empty:
+            st.error(f"找不到 {code} {name} 的資料庫數據。請確認資料庫是否已上傳至 GitHub。")
+            return
 
-    # 設定中文字型
-    plt.rcParams['font.sans-serif'] = ['Microsoft JhengHei', 'Arial Unicode MS', 'sans-serif']
-    plt.rcParams['axes.unicode_minus'] = False
-    
-    fig = Figure(figsize=(10, 5))
-    ax = fig.add_subplot(111)
-    
-    title_suffix = "週線圖" if frequency == 'W' else "日線圖"
-    ax.set_title(f"{code} {name} {title_suffix}\n策略: {strategy_name} (中心日期: {signal_date})", fontsize=10)
+        # --- 字型設定 (相容 Linux/Windows) ---
+        # Streamlit Cloud (Linux) 通常沒有微軟正黑體，嘗試使用常見的 Linux 中文字型
+        fonts = ['Microsoft JhengHei', 'Arial Unicode MS', 'Noto Sans CJK JP', 'DejaVu Sans', 'sans-serif']
+        plt.rcParams['font.sans-serif'] = fonts
+        plt.rcParams['axes.unicode_minus'] = False
+        
+        fig = Figure(figsize=(10, 5))
+        ax = fig.add_subplot(111)
+        
+        title_suffix = "週線圖" if frequency == 'W' else "日線圖"
+        ax.set_title(f"{code} {name} {title_suffix}\n策略: {strategy_name} (中心日期: {signal_date})", fontsize=10)
 
-    # 繪製 K 線
-    width = 0.6
-    width2 = 0.1
-    up = df[df['收盤'] >= df['開盤']]
-    down = df[df['收盤'] < df['開盤']]
-    
-    ax.bar(up.index, up['收盤'] - up['開盤'], width, bottom=up['開盤'], color='red', alpha=0.8)
-    ax.bar(up.index, up['最高'] - up['收盤'], width2, bottom=up['收盤'], color='red')
-    ax.bar(up.index, up['開盤'] - up['最低'], width2, bottom=up['最低'], color='red')
-    
-    ax.bar(down.index, down['開盤'] - down['收盤'], width, bottom=down['收盤'], color='green', alpha=0.8)
-    ax.bar(down.index, down['最高'] - down['開盤'], width2, bottom=down['開盤'], color='green')
-    ax.bar(down.index, down['收盤'] - down['最低'], width2, bottom=down['最低'], color='green')
+        # 繪製 K 線
+        width = 0.6
+        width2 = 0.1
+        up = df[df['收盤'] >= df['開盤']]
+        down = df[df['收盤'] < df['開盤']]
+        
+        ax.bar(up.index, up['收盤'] - up['開盤'], width, bottom=up['開盤'], color='red', alpha=0.8)
+        ax.bar(up.index, up['最高'] - up['收盤'], width2, bottom=up['收盤'], color='red')
+        ax.bar(up.index, up['開盤'] - up['最低'], width2, bottom=up['最低'], color='red')
+        
+        ax.bar(down.index, down['開盤'] - down['收盤'], width, bottom=down['收盤'], color='green', alpha=0.8)
+        ax.bar(down.index, down['最高'] - down['開盤'], width2, bottom=down['開盤'], color='green')
+        ax.bar(down.index, down['收盤'] - down['最低'], width2, bottom=down['最低'], color='green')
 
-    # 均線
-    ax.plot(df.index, df['MA5'], label='MA5', color='blue', linewidth=1)
-    ax.plot(df.index, df['MA10'], label='MA10', color='orange', linewidth=1)
-    ax.plot(df.index, df['MA20'], label='MA20', color='purple', linewidth=1)
-    if frequency == 'W':
-        ax.plot(df.index, df['MA60'], label='MA60', color='brown', linewidth=1)
+        # 均線
+        ax.plot(df.index, df['MA5'], label='MA5', color='blue', linewidth=1)
+        ax.plot(df.index, df['MA10'], label='MA10', color='orange', linewidth=1)
+        ax.plot(df.index, df['MA20'], label='MA20', color='purple', linewidth=1)
+        if frequency == 'W':
+            ax.plot(df.index, df['MA60'], label='MA60', color='brown', linewidth=1)
 
-    # 訊號線
-    if signal_date:
-        sig_dt = pd.to_datetime(signal_date)
-        idx_matches = df.index[df['日期'] == sig_dt].tolist()
-        if idx_matches:
-            ax.axvline(x=idx_matches[0], color='lime', linestyle='--', linewidth=2, alpha=0.5, label='訊號日')
+        # 訊號線
+        if signal_date:
+            sig_dt = pd.to_datetime(signal_date)
+            idx_matches = df.index[df['日期'] == sig_dt].tolist()
+            if idx_matches:
+                ax.axvline(x=idx_matches[0], color='lime', linestyle='--', linewidth=2, alpha=0.5, label='訊號日')
 
-    # Y 軸自動縮放
-    cols = ['最低', '最高', 'MA5', 'MA10', 'MA20']
-    if frequency == 'W': cols.append('MA60')
-    y_min, y_max = df[cols].min().min(), df[cols].max().max()
-    if pd.notna(y_min):
-        margin = (y_max - y_min) * 0.1
-        ax.set_ylim(y_min - margin, y_max + margin)
+        # Y 軸自動縮放
+        cols = ['最低', '最高', 'MA5', 'MA10', 'MA20']
+        if frequency == 'W': cols.append('MA60')
+        y_min, y_max = df[cols].min().min(), df[cols].max().max()
+        if pd.notna(y_min):
+            margin = (y_max - y_min) * 0.1
+            ax.set_ylim(y_min - margin, y_max + margin)
 
-    ax.legend(loc='upper left', fontsize=8)
-    ax.grid(True, linestyle='--', alpha=0.3)
-    
-    # X 軸日期縮寫
-    step = max(1, len(df) // 10)
-    ax.set_xticks(df.index[::step])
-    ax.set_xticklabels(df['日期'].dt.strftime('%m/%d')[::step], rotation=0, fontsize=8)
+        ax.legend(loc='upper left', fontsize=8)
+        ax.grid(True, linestyle='--', alpha=0.3)
+        
+        # X 軸日期縮寫
+        step = max(1, len(df) // 10)
+        ax.set_xticks(df.index[::step])
+        ax.set_xticklabels(df['日期'].dt.strftime('%m/%d')[::step], rotation=0, fontsize=8)
 
-    st.pyplot(fig)
+        st.pyplot(fig)
+        plt.close(fig) # 重要：釋放記憶體
+    except Exception as e:
+        st.error(f"渲染圖表時發生錯誤: {e}")
+        st.info("提示：這通常是字型或 Matplotlib 在雲端環境的相容性問題。")
 
 def main():
     st.title("🚀 TWSE 策略回測雲端儀表板")
