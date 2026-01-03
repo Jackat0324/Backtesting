@@ -1,14 +1,21 @@
-import tkinter as tk
-from tkinter import messagebox
+try:
+    import tkinter as tk
+    from tkinter import messagebox
+    from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+    TK_AVAILABLE = True
+except ImportError:
+    TK_AVAILABLE = False
+    class MockMessagebox:
+        def showwarning(self, *args, **kwargs): print("TK Warning:", args)
+    messagebox = MockMessagebox()
+
 import sqlite3
 import pandas as pd
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 from matplotlib.dates import DateFormatter, WeekdayLocator, MONDAY
 from pathlib import Path
 import matplotlib.ticker as ticker
-import matplotlib.pyplot as plt # Keep for style/rcParams only
 import logging
 
 # 依賴 reader.py/strategy_backtester.py 的路徑設定
@@ -182,6 +189,10 @@ class StockPlotter:
 
     def show_chart(self, parent, code, name, signal_date=None, frequency='D'):
         """跳出新視窗顯示 K 線圖"""
+        if not TK_AVAILABLE:
+            logging.error("Tkinter is not available in this environment. Cannot show desktop chart.")
+            return
+
         logging.info(f"Showing Chart: {code} {name}, Date={signal_date}, Freq={frequency}")
         df = self.get_stock_data(code, center_date=signal_date, frequency=frequency)
         if df is None or df.empty:
