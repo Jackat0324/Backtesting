@@ -11,7 +11,7 @@ from matplotlib.figure import Figure
 
 # Set page config
 # --- 頁面設定 ---
-st.set_page_config(page_title="TWSE 策略回測雲端版", layout="wide")
+st.set_page_config(page_title="TWSE 策略回測 (Experimental)", layout="wide")
 
 st.markdown("""
 <style>
@@ -106,8 +106,8 @@ def render_chart_streamlit(code, name, signal_date, frequency, db_path, strategy
     st.pyplot(fig)
 
 def main():
-    st.title("🚀 TWSE 策略回測雲端儀表板")
-    st.info("這是一個基於 Streamlit 的網頁介面，展示您的策略回測結果與即時線圖。")
+    st.title("🚀 TWSE 策略回測雲端儀表板 (Prototype)")
+    st.info("這是一個基於 Streamlit 的網頁介面原型，展示如何將您的回測系統雲端化。")
 
     bt = get_backtester()
 
