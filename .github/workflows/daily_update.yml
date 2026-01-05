@@ -30,7 +30,7 @@ jobs:
       - name: Run data reader
         run: |
           mkdir -p data
-          python reader.py --days 600 --no-verify --halt-on-fail 100
+          python reader.py --days 15 --no-verify --halt-on-fail 100
 
       - name: Commit and push changes
         run: |
