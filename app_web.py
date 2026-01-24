@@ -1,4 +1,5 @@
 import streamlit as st
+# Trigger reload
 import pandas as pd
 from datetime import date, timedelta, datetime
 import sqlite3
@@ -130,6 +131,7 @@ def main():
     available_strategies = strategies.WEEKLY_STRATEGIES if is_weekly else strategies.DAILY_STRATEGIES
     
     container = st.sidebar.container()
+    container.write(f"已讀取: {len(strategies.WEEKLY_STRATEGIES)} 個週策略")
     select_all = container.checkbox("全選所有策略")
     
     if select_all:
