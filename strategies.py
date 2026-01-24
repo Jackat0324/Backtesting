@@ -167,7 +167,8 @@ WEEKLY_STRATEGIES = [
     '1to7-5to3',
     '7-5to7-7to3-1',
     '2-2to2-2to2-2to7-3',
-    'Ato2-2to7-2to7-2'
+    'Ato2-2to7-2to7-2',
+    '2-2to2-2to7-3to7-3'
 ]
 
 # --- Strategy Factory / Registry ---
@@ -204,6 +205,7 @@ STRATEGY_MAP = {
     '7-5to7-7to3-1': MultiWeekSequenceStrategy(['3-1', '7-7', '7-5']),
     '2-2to2-2to2-2to7-3': MultiWeekSequenceStrategy(['7-3', '2-2', '2-2', '2-2']),
     'Ato2-2to7-2to7-2': MultiWeekSequenceStrategy(['7-2', '7-2', '2-2', 'A']),
+    '2-2to2-2to7-3to7-3': MultiWeekSequenceStrategy(['7-3', '7-3', '2-2', '2-2']),
 }
 
 def get_strategy(name: str) -> BaseStrategy:
