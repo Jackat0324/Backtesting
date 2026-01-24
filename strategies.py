@@ -64,6 +64,7 @@ SEQUENCE_SHORTCUTS = {
     '2':   [60, 20, 5, 10],
     '2-1': [20, 10, 5, 60],
     '2-2': [20, 60, 5, 10],
+    '2-3': [20, 10, 60, 5],
     '3':   [60, 5, 20, 10],
     '3-1': [60, 10, 5, 20],
     '7-1': [20, 5, 10, 60],
@@ -75,6 +76,9 @@ SEQUENCE_SHORTCUTS = {
     '9':   [5, 10, 60, 20],
     '10':  [5, 10, 20, 60],
     'A':   [20, 60, 10, 5],
+    'B':   [10, 60, 20, 5],
+    'B1':  [10, 5, 60, 20],
+    'B3':  [10, 60, 5, 20],
     'A+1': [10, 20, 5, 60]
 }
 
@@ -168,7 +172,19 @@ WEEKLY_STRATEGIES = [
     '7-5to7-7to3-1',
     '2-2to2-2to2-2to7-3',
     'Ato2-2to7-2to7-2',
-    '2-2to2-2to7-3to7-3'
+    '2-2to2-2to7-3to7-3',
+    '7-5to7-5to7-5to3-1',
+    '7-7to7-7to7-8to9',
+    '3to3to3to7-3',
+    'Bto2-3to2-3to7-2',
+    '1to2to3to7-8',
+    '2to3to3to7-8',
+    'A+1toA+1to2-1to2-1',
+    '10to10to10to1-1',
+    '10to10to9toB',
+    'B1toB3toBtoB1',
+    'B1toB3toBto1-1',
+    '7-5to7-5to7-5to3'
 ]
 
 # --- Strategy Factory / Registry ---
@@ -206,6 +222,18 @@ STRATEGY_MAP = {
     '2-2to2-2to2-2to7-3': MultiWeekSequenceStrategy(['7-3', '2-2', '2-2', '2-2']),
     'Ato2-2to7-2to7-2': MultiWeekSequenceStrategy(['7-2', '7-2', '2-2', 'A']),
     '2-2to2-2to7-3to7-3': MultiWeekSequenceStrategy(['7-3', '7-3', '2-2', '2-2']),
+    '7-5to7-5to7-5to3-1': MultiWeekSequenceStrategy(['3-1', '7-5', '7-5', '7-5']),
+    '7-7to7-7to7-8to9': MultiWeekSequenceStrategy(['9', '7-8', '7-7', '7-7']),
+    '3to3to3to7-3': MultiWeekSequenceStrategy(['7-3', '3', '3', '3']),
+    'Bto2-3to2-3to7-2': MultiWeekSequenceStrategy(['7-2', '2-3', '2-3', 'B']),
+    '1to2to3to7-8': MultiWeekSequenceStrategy(['7-8', '3', '2', '1']),
+    '2to3to3to7-8': MultiWeekSequenceStrategy(['7-8', '3', '3', '2']),
+    'A+1toA+1to2-1to2-1': MultiWeekSequenceStrategy(['2-1', '2-1', 'A+1', 'A+1']),
+    '10to10to10to1-1': MultiWeekSequenceStrategy(['1-1', '10', '10', '10']),
+    '10to10to9toB': MultiWeekSequenceStrategy(['B', '9', '10', '10']),
+    'B1toB3toBtoB1': MultiWeekSequenceStrategy(['B1', 'B', 'B3', 'B1']),
+    'B1toB3toBto1-1': MultiWeekSequenceStrategy(['1-1', 'B', 'B3', 'B1']),
+    '7-5to7-5to7-5to3': MultiWeekSequenceStrategy(['3', '7-5', '7-5', '7-5']),
 }
 
 def get_strategy(name: str) -> BaseStrategy:
