@@ -121,10 +121,10 @@ class MultiWeekSequenceStrategy(BaseStrategy):
                 combined_condition = combined_condition & condition
         
         # 共同條件：T 的 5MA > T-1 的 5MA 且 T 的 10MA > T-1 的 10MA
-        trend_ma5 = df['MA5'] > df['MA5'].shift(1)
-        trend_ma10 = df['MA10'] > df['MA10'].shift(1)
+        # trend_ma5 = df['MA5'] > df['MA5'].shift(1)
+        # trend_ma10 = df['MA10'] > df['MA10'].shift(1)
         
-        return combined_condition & trend_ma5 & trend_ma10
+        return combined_condition # & trend_ma5 & trend_ma10
 
 class WeeklySequenceStrategy(MultiWeekSequenceStrategy):
     def __init__(self, prev_seq: list, curr_seq: list):
