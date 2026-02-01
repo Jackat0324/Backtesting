@@ -84,6 +84,17 @@ class StrategyBacktester:
             fetch_start = (pd.to_datetime(start_date) - timedelta(days=buffer_days)).strftime('%Y-%m-%d')
             
         df_all = self.load_data(start_date=fetch_start, end_date=end_date)
+        
+        # --- 效能優化: 預先計算所有股票的均線 (向量化運算) ---
+        logging.info("Pre-calculating MAs for all stocks...")
+        df_all = df_all.sort_values(['代號', '日期'])
+        grouped_close = df_all.groupby('代號')['收盤']
+        df_all['MA2'] = grouped_close.transform(lambda x: x.rolling(window=2).mean())
+        df_all['MA5'] = grouped_close.transform(lambda x: x.rolling(window=5).mean())
+        df_all['MA10'] = grouped_close.transform(lambda x: x.rolling(window=10).mean())
+        df_all['MA20'] = grouped_close.transform(lambda x: x.rolling(window=20).mean())
+        df_all['MA60'] = grouped_close.transform(lambda x: x.rolling(window=60).mean())
+        
         all_results = []
 
         # 針對每一檔股票分組處理
@@ -94,14 +105,8 @@ class StrategyBacktester:
             if progress_callback:
                 progress_callback(i + 1, total_stocks)
                 
-            df_stock = df_stock.copy().sort_values('日期').reset_index(drop=True)
-            
-            # 計算移動平均線
-            df_stock['MA2'] = df_stock['收盤'].rolling(window=2).mean()
-            df_stock['MA5'] = df_stock['收盤'].rolling(window=5).mean()
-            df_stock['MA10'] = df_stock['收盤'].rolling(window=10).mean()
-            df_stock['MA20'] = df_stock['收盤'].rolling(window=20).mean()
-            df_stock['MA60'] = df_stock['收盤'].rolling(window=60).mean()
+            # df_stock 已經包含了預算好的 MA，且已經按日期排序
+            df_stock = df_stock.reset_index(drop=True)
             
             for strategy_type in strategy_types:
                 strategy_obj = strategies.get_strategy(strategy_type)
@@ -193,32 +198,36 @@ class StrategyBacktester:
             fetch_start = (datetime.now() - timedelta(days=buffer_days + 100)).strftime('%Y-%m-%d')
 
         df_all = self.load_data(start_date=fetch_start, end_date=end_date)
-        all_results = []
+        
+        # --- 效能優化: 一次性轉換週線並預算 MA ---
+        logging.info("Resampling to weekly and pre-calculating MAs for all stocks...")
+        ohlc_dict = {
+            '開盤': 'first',
+            '最高': 'max',
+            '最低': 'min',
+            '收盤': 'last',
+            '名稱': 'first'
+        }
+        # 使用 groupby + Grouper 進行全量週線轉換
+        df_all = df_all.sort_values(['代號', '日期'])
+        df_weekly_all = df_all.groupby(['代號', pd.Grouper(key='日期', freq='W-FRI')]).agg(ohlc_dict).dropna().reset_index()
+        
+        # 預算週均線
+        w_grouped_close = df_weekly_all.groupby('代號')['收盤']
+        df_weekly_all['MA5'] = w_grouped_close.transform(lambda x: x.rolling(window=5).mean())
+        df_weekly_all['MA10'] = w_grouped_close.transform(lambda x: x.rolling(window=10).mean())
+        df_weekly_all['MA20'] = w_grouped_close.transform(lambda x: x.rolling(window=20).mean())
+        df_weekly_all['MA60'] = w_grouped_close.transform(lambda x: x.rolling(window=60).mean())
 
-        grouped = df_all.groupby('代號')
+        all_results = []
+        grouped = df_weekly_all.groupby('代號')
         total_stocks = grouped.ngroups
         
-        for i, (code, df_stock) in enumerate(grouped):
+        for i, (code, df_weekly) in enumerate(grouped):
             if progress_callback:
                 progress_callback(i + 1, total_stocks)
 
-            df_stock = df_stock.copy().sort_values('日期')
-            df_stock.set_index('日期', inplace=True)
-            
-            ohlc_dict = {
-                '開盤': 'first',
-                '最高': 'max',
-                '最低': 'min',
-                '收盤': 'last',
-                '名稱': 'first'
-            }
-            df_weekly = df_stock.resample('W-FRI').agg(ohlc_dict).dropna()
-            df_weekly = df_weekly.reset_index()
-            
-            df_weekly['MA5'] = df_weekly['收盤'].rolling(window=5).mean()
-            df_weekly['MA10'] = df_weekly['收盤'].rolling(window=10).mean()
-            df_weekly['MA20'] = df_weekly['收盤'].rolling(window=20).mean()
-            df_weekly['MA60'] = df_weekly['收盤'].rolling(window=60).mean()
+            df_weekly = df_weekly.reset_index(drop=True)
 
             for strategy_type in strategy_types:
                 strategy_obj = strategies.get_strategy(strategy_type)
