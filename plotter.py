@@ -82,15 +82,13 @@ class ChartCursor:
             ma5 = row.get('MA5', 0)
             ma10 = row.get('MA10', 0)
             ma20 = row.get('MA20', 0)
+            ma60 = row.get('MA60', 0)
             
             info_text = (f"日期: {dt_str}\n"
                          f"開: {open_p:.2f}  高: {high:.2f}\n"
                          f"低: {low:.2f}  收: {close:.2f}\n"
                          f"MA5: {ma5:.2f}  MA10: {ma10:.2f}\n"
-                         f"MA20: {ma20:.2f}")
-            if self.frequency == 'W':
-                ma60 = row.get('MA60', 0)
-                info_text += f"\nMA60: {ma60:.2f}"
+                         f"MA20: {ma20:.2f}  MA60: {ma60:.2f}")
                 
             self.text.set_text(info_text)
             self.text.set_color('white')
@@ -240,8 +238,7 @@ class StockPlotter:
         ax.plot(df.index, df['MA5'], label='MA5', color='blue', linewidth=1.2)
         ax.plot(df.index, df['MA10'], label='MA10', color='orange', linewidth=1.2)
         ax.plot(df.index, df['MA20'], label='MA20', color='purple', linewidth=1.2)
-        if frequency == 'W':
-            ax.plot(df.index, df['MA60'], label='MA60', color='brown', linewidth=1.2)
+        ax.plot(df.index, df['MA60'], label='MA60', color='brown', linewidth=1.2)
 
         # 設定 X 軸標籤 (日期)
         # 動態調整標籤間隔，目標是顯示約 30 個日期
@@ -268,9 +265,7 @@ class StockPlotter:
 
         # [NEW] 自動調整 Y 軸範圍 (避免從 0 開始)
         # 收集所有相關數據的最小值與最大值
-        columns_to_check = ['最低', '最高', 'MA5', 'MA10', 'MA20']
-        if frequency == 'W':
-            columns_to_check.append('MA60')
+        columns_to_check = ['最低', '最高', 'MA5', 'MA10', 'MA20', 'MA60']
             
         # 找出整張表在這些欄位的 min/max (過濾 NaN)
         y_min = df[columns_to_check].min().min()

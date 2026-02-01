@@ -198,7 +198,10 @@ WEEKLY_STRATEGIES = [
     '10to10to9toB',
     'B1toB3toBtoB1',
     'B1toB3toBto1-1',
-    '7-5to7-5to7-5to3'
+    '7-5to7-5to7-5to3',
+    '1to1to1to2',
+    '1to1to1to3',
+    '2to2to3to7-3'
 ]
 
 # --- Strategy Factory / Registry ---
@@ -237,7 +240,10 @@ STRATEGY_MAP = {
     '10to10to9toB': MultiSequenceStrategy(['B', '9', '10', '10']),
     'B1toB3toBtoB1': MultiSequenceStrategy(['B1', 'B', 'B3', 'B1']),
     'B1toB3toBto1-1': MultiSequenceStrategy(['1-1', 'B', 'B3', 'B1']),
-    '7-5to7-5to7-5to3': MultiSequenceStrategy(['3', '7-5', '7-5', '7-5'])
+    '7-5to7-5to7-5to3': MultiSequenceStrategy(['3', '7-5', '7-5', '7-5']),
+    '1to1to1to2': MultiSequenceStrategy(['2', '1', '1', '1']),
+    '1to1to1to3': MultiSequenceStrategy(['3', '1', '1', '1']),
+    '2to2to3to7-3': MultiSequenceStrategy(['7-3', '3', '2', '2'])
 }
 
 def get_strategy(name: str) -> BaseStrategy:
