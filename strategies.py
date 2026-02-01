@@ -166,21 +166,21 @@ class ThreeWeekSequenceStrategy(MultiSequenceStrategy):
 
 DAILY_STRATEGIES = [
 
-    'Seq_10_MA5eq10_10_Daily',
-    'Seq_10_MA5eq10_1-1_Daily',
-    'Seq_1_MA5eq10_2_Daily',
-    'Seq_1_MA5eq10_3_Daily',
-    'Seq_1_MA5eq10_7-7_Daily',
-    'Seq_2_MA5eq20_3_Daily',
-    'Seq_1-1_MA5eq20_10_Daily',
-    'Seq_2-1_MA5eq20_7-9_Daily',
-    'Seq_3-1_MA5eq20_7-5_Daily',
-    'Seq_7-5_MA5eq20_7-5_Daily',
-    'Seq_7-1_MA5eq20_10_Daily',
-    'Seq_9_MA20eq60_10_Daily',
-    'Seq_3_MA10eq20_7-7_Daily',
-    'Seq_A+1_MA10eq20_10_Daily',
-    'Seq_1_MA10eq20_7-8_Daily'
+    '10toMA5=10to10_Daily',
+    '10toMA5=10to1-1_Daily',
+    '1toMA5=10to2_Daily',
+    '1toMA5=10to3_Daily',
+    '1toMA5=10to7-7_Daily',
+    '2toMA5=20to3_Daily',
+    '1-1toMA5=20to10_Daily',
+    '2-1toMA5=20to7-9_Daily',
+    '3-1toMA5=20to7-5_Daily',
+    '7-5toMA5=20to7-5_Daily',
+    '7-1toMA5=20to10_Daily',
+    '9toMA20=60to10_Daily',
+    '3toMA10=20to7-7_Daily',
+    'A+1toMA10=20to10_Daily',
+    '1toMA10=20to7-8_Daily'
 ]
 
 WEEKLY_STRATEGIES = [
@@ -206,21 +206,21 @@ WEEKLY_STRATEGIES = [
 STRATEGY_MAP = {
     # Daily
 
-    'Seq_10_MA5eq10_10_Daily': MultiSequenceStrategy(['10', 'MA5=MA10', '10']), 
-    'Seq_10_MA5eq10_1-1_Daily': MultiSequenceStrategy(['10', 'MA5=MA10', '1-1']), 
-    'Seq_1_MA5eq10_2_Daily': MultiSequenceStrategy(['1', 'MA5=MA10', '2']), 
-    'Seq_1_MA5eq10_3_Daily': MultiSequenceStrategy(['1', 'MA5=MA10', '3']), 
-    'Seq_1_MA5eq10_7-7_Daily': MultiSequenceStrategy(['1', 'MA5=MA10', '7-7']), 
-    'Seq_2_MA5eq20_3_Daily': MultiSequenceStrategy(['2', 'MA5=MA20', '3']), 
-    'Seq_1-1_MA5eq20_10_Daily': MultiSequenceStrategy(['1-1', 'MA5=MA20', '10']),
-    'Seq_2-1_MA5eq20_7-9_Daily': MultiSequenceStrategy(['2-1', 'MA5=MA20', '7-9']),
-    'Seq_3-1_MA5eq20_7-5_Daily': MultiSequenceStrategy(['3-1', 'MA5=MA20', '7-5']),
-    'Seq_7-5_MA5eq20_7-5_Daily': MultiSequenceStrategy(['7-5', 'MA5=MA20', '7-5']),
-    'Seq_7-1_MA5eq20_10_Daily': MultiSequenceStrategy(['7-1', 'MA5=MA20', '10']),
-    'Seq_9_MA20eq60_10_Daily': MultiSequenceStrategy(['9', 'MA20=MA60', '10']),
-    'Seq_3_MA10eq20_7-7_Daily': MultiSequenceStrategy(['3', 'MA10=MA20', '7-7']),
-    'Seq_A+1_MA10eq20_10_Daily': MultiSequenceStrategy(['A+1', 'MA10=MA20', '10']),
-    'Seq_1_MA10eq20_7-8_Daily': MultiSequenceStrategy(['1', 'MA10=MA20', '7-8']),
+    '10toMA5=10to10_Daily': MultiSequenceStrategy(['10', 'MA5=MA10', '10']), 
+    '10toMA5=10to1-1_Daily': MultiSequenceStrategy(['1-1', 'MA5=MA10', '10']), 
+    '1toMA5=10to2_Daily': MultiSequenceStrategy(['2', 'MA5=MA10', '1']), 
+    '1toMA5=10to3_Daily': MultiSequenceStrategy(['3', 'MA5=MA10', '1']), 
+    '1toMA5=10to7-7_Daily': MultiSequenceStrategy(['7-7', 'MA5=MA10', '1']), 
+    '2toMA5=20to3_Daily': MultiSequenceStrategy(['3', 'MA5=MA20', '2']), 
+    '1-1toMA5=20to10_Daily': MultiSequenceStrategy(['10', 'MA5=MA20', '1-1']),
+    '2-1toMA5=20to7-9_Daily': MultiSequenceStrategy(['7-9', 'MA5=MA20', '2-1']),
+    '3-1toMA5=20to7-5_Daily': MultiSequenceStrategy(['7-5', 'MA5=MA20', '3-1']),
+    '7-5toMA5=20to7-5_Daily': MultiSequenceStrategy(['7-5', 'MA5=MA20', '7-5']),
+    '7-1toMA5=20to10_Daily': MultiSequenceStrategy(['10', 'MA5=MA20', '7-1']),
+    '9toMA20=60to10_Daily': MultiSequenceStrategy(['10', 'MA20=MA60', '9']),
+    '3toMA10=20to7-7_Daily': MultiSequenceStrategy(['7-7', 'MA10=MA20', '3']),
+    'A+1toMA10=20to10_Daily': MultiSequenceStrategy(['10', 'MA10=MA20', 'A+1']),
+    '1toMA10=20to7-8_Daily': MultiSequenceStrategy(['7-8', 'MA10=MA20', '1']),
     
     # Weekly
     '2-2to2-2to2-2to7-3': MultiSequenceStrategy(['7-3', '2-2', '2-2', '2-2']),
