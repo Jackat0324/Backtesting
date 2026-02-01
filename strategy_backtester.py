@@ -97,9 +97,11 @@ class StrategyBacktester:
             df_stock = df_stock.copy().sort_values('日期').reset_index(drop=True)
             
             # 計算移動平均線
+            df_stock['MA2'] = df_stock['收盤'].rolling(window=2).mean()
             df_stock['MA5'] = df_stock['收盤'].rolling(window=5).mean()
             df_stock['MA10'] = df_stock['收盤'].rolling(window=10).mean()
             df_stock['MA20'] = df_stock['收盤'].rolling(window=20).mean()
+            df_stock['MA60'] = df_stock['收盤'].rolling(window=60).mean()
             
             for strategy_type in strategy_types:
                 strategy_obj = strategies.get_strategy(strategy_type)

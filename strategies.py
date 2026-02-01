@@ -1,5 +1,5 @@
-import pandas as pd
 from abc import ABC, abstractmethod
+import re
 
 class BaseStrategy(ABC):
     @abstractmethod
@@ -85,9 +85,10 @@ SEQUENCE_SHORTCUTS = {
     'A+1': [10, 20, 5, 60]
 }
 
-# --- Weekly Strategies ---
+# --- Weekly & Daily Sequence Strategies ---
+# (Commonly used with SEQUENCE_SHORTCUTS)
 
-class MultiWeekSequenceStrategy(BaseStrategy):
+class MultiSequenceStrategy(BaseStrategy):
     def __init__(self, sequences: list):
         """
         sequences: A list of sequences. Each element can be a list of integers 
@@ -97,21 +98,40 @@ class MultiWeekSequenceStrategy(BaseStrategy):
         resolved_sequences = []
         for seq in sequences:
             if isinstance(seq, str):
-                resolved_sequences.append(SEQUENCE_SHORTCUTS.get(seq, []))
+                shortcut = SEQUENCE_SHORTCUTS.get(seq)
+                if shortcut:
+                    resolved_sequences.append([f'MA{p}' for p in shortcut])
+                else:
+                    # It's a custom expression like 'MA5=MA10'
+                    resolved_sequences.append(seq)
             else:
-                resolved_sequences.append(seq)
+                resolved_sequences.append([f'MA{p}' for p in seq])
         
-        self.sequences = [[f'MA{p}' for p in seq] for seq in resolved_sequences]
+        self.sequences = resolved_sequences
 
     def _check_sequence(self, df, seq, shift=0):
-        conditions = []
-        for i in range(len(seq) - 1):
-            conditions.append(df[seq[i]].shift(shift) > df[seq[i+1]].shift(shift))
-        
-        res = conditions[0]
-        for c in conditions[1:]:
-            res = res & c
-        return res
+        if isinstance(seq, str):
+            # Handle expression strings (e.g., 'MA5=MA10')
+            # Replace '=' with '==' but avoid changing '>=', '<=', '!=', '=='
+            expr = re.sub(r'(?<![<>!=])=(?![=])', '==', seq)
+            try:
+                # Calculate the condition then shift the result
+                return df.eval(expr).shift(shift).fillna(False)
+            except Exception as e:
+                return pd.Series(False, index=df.index)
+        else:
+            # Handle standard list of MAs (e.g., ['MA60', 'MA20', 'MA10', 'MA5'])
+            if not seq:
+                return pd.Series(True, index=df.index)
+                
+            conditions = []
+            for i in range(len(seq) - 1):
+                conditions.append(df[seq[i]].shift(shift) > df[seq[i+1]].shift(shift))
+            
+            res = conditions[0]
+            for c in conditions[1:]:
+                res = res & c
+            return res.fillna(False)
 
     def calculate_signals(self, df: pd.DataFrame) -> pd.Series:
         # Check sequences for each week
@@ -129,28 +149,37 @@ class MultiWeekSequenceStrategy(BaseStrategy):
         
         return combined_condition # & trend_ma5 & trend_ma10
 
-class WeeklySequenceStrategy(MultiWeekSequenceStrategy):
+class WeeklySequenceStrategy(MultiSequenceStrategy):
     def __init__(self, prev_seq: list, curr_seq: list):
         # WeeklySequenceStrategy was (prev (T-1), curr (T0))
-        # MultiWeekSequenceStrategy expects (T0, T-1, ...)
+        # MultiSequenceStrategy expects (T0, T-1, ...)
         super().__init__([curr_seq, prev_seq])
 
-class ThreeWeekSequenceStrategy(MultiWeekSequenceStrategy):
+class ThreeWeekSequenceStrategy(MultiSequenceStrategy):
     def __init__(self, t2_seq: list, t1_seq: list, t0_seq: list):
         # ThreeWeekSequenceStrategy was (T-2, T-1, T0)
-        # MultiWeekSequenceStrategy expects (T0, T-1, T-2)
+        # MultiSequenceStrategy expects (T0, T-1, T-2)
         super().__init__([t0_seq, t1_seq, t2_seq])
 
 # --- Strategy Lists for GUI ---
 
 DAILY_STRATEGIES = [
-    'MA5_MA10_Flat',
-    'MA10_MA20_Flat',
-    'MA5_MA20_Flat',
-    'MA5_Eq_MA10_2Days',
-    'MA10_Eq_MA20_2Days',
-    'MA5_Eq_MA20_2Days',
-    'MA5_cross_MA10'
+
+    'Seq_10_MA5eq10_10_Daily',
+    'Seq_10_MA5eq10_1-1_Daily',
+    'Seq_1_MA5eq10_2_Daily',
+    'Seq_1_MA5eq10_3_Daily',
+    'Seq_1_MA5eq10_7-7_Daily',
+    'Seq_2_MA5eq20_3_Daily',
+    'Seq_1-1_MA5eq20_10_Daily',
+    'Seq_2-1_MA5eq20_7-9_Daily',
+    'Seq_3-1_MA5eq20_7-5_Daily',
+    'Seq_7-5_MA5eq20_7-5_Daily',
+    'Seq_7-1_MA5eq20_10_Daily',
+    'Seq_9_MA20eq60_10_Daily',
+    'Seq_3_MA10eq20_7-7_Daily',
+    'Seq_A+1_MA10eq20_10_Daily',
+    'Seq_1_MA10eq20_7-8_Daily'
 ]
 
 WEEKLY_STRATEGIES = [
@@ -175,30 +204,39 @@ WEEKLY_STRATEGIES = [
 
 STRATEGY_MAP = {
     # Daily
-    'MA5_MA10_Flat': FlatMAStrategy(5, 10),
-    'MA10_MA20_Flat': FlatMAStrategy(10, 20),
-    'MA5_MA20_Flat': FlatMAStrategy(5, 20),
-    'MA5_Eq_MA10_2Days': EqMA2DaysStrategy(5, 10),
-    'MA10_Eq_MA20_2Days': EqMA2DaysStrategy(10, 20),
-    'MA5_Eq_MA20_2Days': EqMA2DaysStrategy(5, 20),
-    'MA5_cross_MA10': CrossMAStrategy(5, 10),
+
+    'Seq_10_MA5eq10_10_Daily': MultiSequenceStrategy(['10', 'MA5=MA10', '10']), 
+    'Seq_10_MA5eq10_1-1_Daily': MultiSequenceStrategy(['10', 'MA5=MA10', '1-1']), 
+    'Seq_1_MA5eq10_2_Daily': MultiSequenceStrategy(['1', 'MA5=MA10', '2']), 
+    'Seq_1_MA5eq10_3_Daily': MultiSequenceStrategy(['1', 'MA5=MA10', '3']), 
+    'Seq_1_MA5eq10_7-7_Daily': MultiSequenceStrategy(['1', 'MA5=MA10', '7-7']), 
+    'Seq_2_MA5eq20_3_Daily': MultiSequenceStrategy(['2', 'MA5=MA20', '3']), 
+    'Seq_1-1_MA5eq20_10_Daily': MultiSequenceStrategy(['1-1', 'MA5=MA20', '10']),
+    'Seq_2-1_MA5eq20_7-9_Daily': MultiSequenceStrategy(['2-1', 'MA5=MA20', '7-9']),
+    'Seq_3-1_MA5eq20_7-5_Daily': MultiSequenceStrategy(['3-1', 'MA5=MA20', '7-5']),
+    'Seq_7-5_MA5eq20_7-5_Daily': MultiSequenceStrategy(['7-5', 'MA5=MA20', '7-5']),
+    'Seq_7-1_MA5eq20_10_Daily': MultiSequenceStrategy(['7-1', 'MA5=MA20', '10']),
+    'Seq_9_MA20eq60_10_Daily': MultiSequenceStrategy(['9', 'MA20=MA60', '10']),
+    'Seq_3_MA10eq20_7-7_Daily': MultiSequenceStrategy(['3', 'MA10=MA20', '7-7']),
+    'Seq_A+1_MA10eq20_10_Daily': MultiSequenceStrategy(['A+1', 'MA10=MA20', '10']),
+    'Seq_1_MA10eq20_7-8_Daily': MultiSequenceStrategy(['1', 'MA10=MA20', '7-8']),
     
     # Weekly
-    '2-2to2-2to2-2to7-3': MultiWeekSequenceStrategy(['7-3', '2-2', '2-2', '2-2']),
-    'Ato2-2to7-2to7-2': MultiWeekSequenceStrategy(['7-2', '7-2', '2-2', 'A']),
-    '2-2to2-2to7-3to7-3': MultiWeekSequenceStrategy(['7-3', '7-3', '2-2', '2-2']),
-    '7-5to7-5to7-5to3-1': MultiWeekSequenceStrategy(['3-1', '7-5', '7-5', '7-5']),
-    '7-7to7-7to7-8to9': MultiWeekSequenceStrategy(['9', '7-8', '7-7', '7-7']),
-    '3to3to3to7-3': MultiWeekSequenceStrategy(['7-3', '3', '3', '3']),
-    'Bto2-3to2-3to7-2': MultiWeekSequenceStrategy(['7-2', '2-3', '2-3', 'B']),
-    '1to2to3to7-8': MultiWeekSequenceStrategy(['7-8', '3', '2', '1']),
-    '2to3to3to7-8': MultiWeekSequenceStrategy(['7-8', '3', '3', '2']),
-    'A+1toA+1to2-1to2-1': MultiWeekSequenceStrategy(['2-1', '2-1', 'A+1', 'A+1']),
-    '10to10to10to1-1': MultiWeekSequenceStrategy(['1-1', '10', '10', '10']),
-    '10to10to9toB': MultiWeekSequenceStrategy(['B', '9', '10', '10']),
-    'B1toB3toBtoB1': MultiWeekSequenceStrategy(['B1', 'B', 'B3', 'B1']),
-    'B1toB3toBto1-1': MultiWeekSequenceStrategy(['1-1', 'B', 'B3', 'B1']),
-    '7-5to7-5to7-5to3': MultiWeekSequenceStrategy(['3', '7-5', '7-5', '7-5']),
+    '2-2to2-2to2-2to7-3': MultiSequenceStrategy(['7-3', '2-2', '2-2', '2-2']),
+    'Ato2-2to7-2to7-2': MultiSequenceStrategy(['7-2', '7-2', '2-2', 'A']),
+    '2-2to2-2to7-3to7-3': MultiSequenceStrategy(['7-3', '7-3', '2-2', '2-2']),
+    '7-5to7-5to7-5to3-1': MultiSequenceStrategy(['3-1', '7-5', '7-5', '7-5']),
+    '7-7to7-7to7-8to9': MultiSequenceStrategy(['9', '7-8', '7-7', '7-7']),
+    '3to3to3to7-3': MultiSequenceStrategy(['7-3', '3', '3', '3']),
+    'Bto2-3to2-3to7-2': MultiSequenceStrategy(['7-2', '2-3', '2-3', 'B']),
+    '1to2to3to7-8': MultiSequenceStrategy(['7-8', '3', '2', '1']),
+    '2to3to3to7-8': MultiSequenceStrategy(['7-8', '3', '3', '2']),
+    'A+1toA+1to2-1to2-1': MultiSequenceStrategy(['2-1', '2-1', 'A+1', 'A+1']),
+    '10to10to10to1-1': MultiSequenceStrategy(['1-1', '10', '10', '10']),
+    '10to10to9toB': MultiSequenceStrategy(['B', '9', '10', '10']),
+    'B1toB3toBtoB1': MultiSequenceStrategy(['B1', 'B', 'B3', 'B1']),
+    'B1toB3toBto1-1': MultiSequenceStrategy(['1-1', 'B', 'B3', 'B1']),
+    '7-5to7-5to7-5to3': MultiSequenceStrategy(['3', '7-5', '7-5', '7-5'])
 }
 
 def get_strategy(name: str) -> BaseStrategy:
