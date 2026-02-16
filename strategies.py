@@ -201,7 +201,18 @@ WEEKLY_STRATEGIES = [
     '7-5to7-5to7-5to3',
     '1to1to1to2',
     '1to1to1to3',
-    '2to2to3to7-3'
+    '2to2to3to7-3',
+    '2to2to7-5to7-5',
+    '2-1to2-1to2-1to7-1',
+    '2-3to2-3toAtoA',
+    '2-3to2-3to2-3to7-1',
+    '3-1to3-1to3-1to7-7',
+    'Ato2-3to7-9to7-9',
+    'AtoAto1to2',
+    'Ato2-3to7-1to7-9',
+    'A+1toA+1to2-1to7-1',
+    'B4to2-3to2-3to7-2',
+    '10to10to1-1to10'
 ]
 
 # --- Strategy Factory / Registry ---
@@ -243,7 +254,18 @@ STRATEGY_MAP = {
     '7-5to7-5to7-5to3': MultiSequenceStrategy(['3', '7-5', '7-5', '7-5']),
     '1to1to1to2': MultiSequenceStrategy(['2', '1', '1', '1']),
     '1to1to1to3': MultiSequenceStrategy(['3', '1', '1', '1']),
-    '2to2to3to7-3': MultiSequenceStrategy(['7-3', '3', '2', '2'])
+    '2to2to3to7-3': MultiSequenceStrategy(['7-3', '3', '2', '2']),
+    '2to2to7-5to7-5': MultiSequenceStrategy(['7-5', '7-5', '2', '2']),
+    '2-1to2-1to2-1to7-1': MultiSequenceStrategy(['7-1', '2-1', '2-1', '2-1']),
+    '2-3to2-3toAtoA': MultiSequenceStrategy(['A', 'A', '2-3', '2-3']),
+    '2-3to2-3to2-3to7-1': MultiSequenceStrategy(['7-1', '2-3', '2-3', '2-3']),
+    '3-1to3-1to3-1to7-7': MultiSequenceStrategy(['7-7', '3-1', '3-1', '3-1']),
+    'Ato2-3to7-9to7-9': MultiSequenceStrategy(['7-9', '7-9', '2-3', 'A']),
+    'AtoAto1to2': MultiSequenceStrategy(['2', '1', 'A', 'A']),
+    'Ato2-3to7-1to7-9': MultiSequenceStrategy(['7-9', '7-1', '2-3', 'A']),
+    'A+1toA+1to2-1to7-1': MultiSequenceStrategy(['7-1', '2-1', 'A+1', 'A+1']),
+    'B4to2-3to2-3to7-2': MultiSequenceStrategy(['7-2', '2-3', '2-3', 'B4']),
+    '10to10to1-1to10': MultiSequenceStrategy(['10', '1-1', '10', '10'])
 }
 
 def get_strategy(name: str) -> BaseStrategy:
