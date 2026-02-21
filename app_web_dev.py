@@ -115,18 +115,20 @@ def main():
     st.sidebar.header("⚙️ 掃描設定")
     
     # 模式選擇
-    mode = st.sidebar.radio("數據頻率", ["日K (Daily)", "週K (Weekly)", "週K (位階)"])
-    is_weekly = "Weekly" in mode or "位階" in mode
+    mode = st.sidebar.radio("數據頻率", ["日K (Daily)", "週K (Weekly)", "日K (位階)", "週K (位階)"])
+    is_weekly = "Weekly" in mode or "週K" in mode
     is_ranks = "位階" in mode
     mode_key = 'W' if is_weekly else 'D'
 
+
     # 策略選擇
     if is_ranks:
-        available_strategies = strategies.WEEKLY_STRATEGIES_RANKS
+        available_strategies = strategies.WEEKLY_STRATEGIES_RANKS if is_weekly else strategies.DAILY_STRATEGIES_RANKS
     elif is_weekly:
         available_strategies = strategies.WEEKLY_STRATEGIES
     else:
         available_strategies = strategies.DAILY_STRATEGIES
+
 
     
     container = st.sidebar.container()

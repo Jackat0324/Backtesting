@@ -225,6 +225,25 @@ DAILY_STRATEGIES = [
     '1toMA10=20to7-8_Daily'
 ]
 
+DAILY_STRATEGIES_RANKS = [
+    '1to1to2to3_Daily',
+    '1to1to2to7-3_Daily',
+    '1to1to2to7-3-v2_Daily',
+    '1to2to3to7-3_Daily',
+    '1to2to3to7-3-v2_Daily',
+    '1to1to3to7-7_Daily',
+    '1to2to2to3_Daily',
+    '2to3to3to7-8_Daily',
+    '2to2to2to3_Daily',
+    '2to3to3to7-7_Daily',
+    '2to2to3to7-7_Daily',
+    '2to2to7-7to7-8_Daily',
+    '2to3to3to3-1_Daily',
+    '3to3to3to7-8_Daily',
+    '1-1to1-1toA+1toA+1_Daily'
+]
+
+
 WEEKLY_STRATEGIES = [
     '2-2to2-2to2-2to7-3',
     'Ato2-2to7-2to7-2',
@@ -436,7 +455,25 @@ STRATEGY_MAP = {
         ['MA20', 1, 2, 3, 4], 
         ['MA60', 4, 4, 3, 4]
     ),
+
+    # Daily Ranks
+    '1to1to2to3_Daily': MultiSequenceRanksStrategy(['1', '1', '2', '3'], ['MA5', 1, 2, 3, 4], ['MA10', 4, 3, 2, 1], ['MA20', 4, 3, 2, 1], ['MA60', 4, 3, 2, 1]),
+    '1to1to2to7-3_Daily': MultiSequenceRanksStrategy(['1', '1', '2', '7-3'], ['MA5', 1, 2, 3, 4], ['MA10', 4, 3, 2, 1], ['MA20', 4, 3, 2, 1], ['MA60', 4, 3, 2, 1]),
+    '1to1to2to7-3-v2_Daily': MultiSequenceRanksStrategy(['1', '1', '2', '7-3'], ['MA5', 1, 2, 3, 4], ['MA10', 4, 3, 2, 1], ['MA20', 4, 3, 2, 1], ['MA60', 2, 2, 3, 4]),
+    '1to2to3to7-3_Daily': MultiSequenceRanksStrategy(['1', '2', '3', '7-3'], ['MA5', 1, 2, 3, 4], ['MA10', 3, 1, 2, 4], ['MA20', 1, 2, 3, 4], ['MA60', 4, 1, 2, 3]),
+    '1to2to3to7-3-v2_Daily': MultiSequenceRanksStrategy(['1', '2', '3', '7-3'], ['MA5', 1, 2, 3, 4], ['MA10', 1, 2, 3, 4], ['MA20', 1, 2, 3, 4], ['MA60', 1, 2, 3, 4]),
+    '1to1to3to7-7_Daily': MultiSequenceRanksStrategy(['1', '1', '3', '7-7'], ['MA5', 1, 2, 3, 4], ['MA10', 1, 2, 3, 4], ['MA20', 1, 2, 3, 4], ['MA60', 3, 4, 3, 3]),
+    '1to2to2to3_Daily': MultiSequenceRanksStrategy(['1', '2', '2', '3'], ['MA5', 1, 2, 3, 4], ['MA10', 3, 2, 1, 4], ['MA20', 3, 2, 3, 4], ['MA60', 4, 1, 2, 3]),
+    '2to3to3to7-8_Daily': MultiSequenceRanksStrategy(['2', '3', '3', '7-8'], ['MA5', 1, 2, 3, 4], ['MA10', 1, 2, 3, 4], ['MA20', 1, 2, 3, 4], ['MA60', 1, 2, 3, 4]),
+    '2to2to2to3_Daily': MultiSequenceRanksStrategy(['2', '2', '2', '3'], ['MA5', 1, 2, 3, 4], ['MA10', 2, 1, 3, 4], ['MA20', 4, 2, 1, 3], ['MA60', 2, 1, 3, 4]),
+    '2to3to3to7-7_Daily': MultiSequenceRanksStrategy(['2', '3', '3', '7-7'], ['MA5', 1, 2, 3, 4], ['MA10', 1, 2, 3, 4], ['MA20', 1, 2, 3, 4], ['MA60', 4, 3, 2, 1]),
+    '2to2to3to7-7_Daily': MultiSequenceRanksStrategy(['2', '2', '3', '7-7'], ['MA5', 1, 2, 3, 4], ['MA10', 1, 2, 3, 4], ['MA20', 4, 2, 1, 3], ['MA60', 4, 3, 2, 1]),
+    '2to2to7-7to7-8_Daily': MultiSequenceRanksStrategy(['2', '2', '7-7', '7-8'], ['MA5', 2, 1, 3, 4], ['MA10', 1, 2, 3, 4], ['MA20', 3, 2, 3, 4], ['MA60', 3, 1, 2, 4]),
+    '2to3to3to3-1_Daily': MultiSequenceRanksStrategy(['2', '3', '3', '3-1'], ['MA5', 2, 4, 3, 1], ['MA10', 1, 2, 3, 4], ['MA20', 4, 3, 2, 1], ['MA60', 4, 4, 3, 2]),
+    '3to3to3to7-8_Daily': MultiSequenceRanksStrategy(['3', '3', '3', '7-8'], ['MA5', 1, 2, 3, 4], ['MA10', 1, 2, 3, 4], ['MA20', 1, 2, 3, 4], ['MA60', 2, 2, 3, 4]),
+    '1-1to1-1toA+1toA+1_Daily': MultiSequenceRanksStrategy(['1-1', '1-1', 'A+1', 'A+1'], ['MA5', 4, 3, 1, 2], ['MA10', 4, 3, 2, 1], ['MA20', 1, 2, 3, 4], ['MA60', 4, 4, 3, 4]),
 }
+
 
 
 
