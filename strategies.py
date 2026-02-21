@@ -261,8 +261,17 @@ WEEKLY_STRATEGIES_RANKS = [
     '1to1to2to3',
     '1to1to2to7-3',
     '1to1to2to7-3-v2',
-    '1to2to3to7-3'
+    '1to2to3to7-3',
+    '1to2to3to7-3-v2',
+    '1to1to3to7-7',
+    '1to2to2to3',
+    '2to3to3to7-8',
+    '2to2to2to3',
+    '2to3to3to7-7',
+    '2to2to3to7-7',
+    '2to2to7-7to7-8'
 ]
+
 
 
 # --- Strategy Factory / Registry ---
@@ -346,7 +355,64 @@ STRATEGY_MAP = {
         ['MA20', 1, 2, 3, 4], 
         ['MA60', 4, 1, 2, 3]
     ),
+    '1to2to3to7-3-v2': MultiSequenceRanksStrategy(
+        ['1', '2', '3', '7-3'], 
+        ['MA5', 1, 2, 3, 4], 
+        ['MA10', 1, 2, 3, 4], 
+        ['MA20', 1, 2, 3, 4], 
+        ['MA60', 1, 2, 3, 4]
+    ),
+    '1to1to3to7-7': MultiSequenceRanksStrategy(
+        ['1', '1', '3', '7-7'], 
+        ['MA5', 1, 2, 3, 4], 
+        ['MA10', 1, 2, 3, 4], 
+        ['MA20', 1, 2, 3, 4], 
+        ['MA60', 3, 4, 3, 3]
+    ),
+    '1to2to2to3': MultiSequenceRanksStrategy(
+        ['1', '2', '2', '3'], 
+        ['MA5', 1, 2, 3, 4], 
+        ['MA10', 3, 2, 1, 4], 
+        ['MA20', 3, 2, 3, 4], 
+        ['MA60', 4, 1, 2, 3]
+    ),
+    '2to3to3to7-8': MultiSequenceRanksStrategy(
+        ['2', '3', '3', '7-8'], 
+        ['MA5', 1, 2, 3, 4], 
+        ['MA10', 1, 2, 3, 4], 
+        ['MA20', 1, 2, 3, 4], 
+        ['MA60', 1, 2, 3, 4]
+    ),
+    '2to2to2to3': MultiSequenceRanksStrategy(
+        ['2', '2', '2', '3'], 
+        ['MA5', 1, 2, 3, 4], 
+        ['MA10', 2, 1, 3, 4], 
+        ['MA20', 4, 2, 1, 3], 
+        ['MA60', 2, 1, 3, 4]
+    ),
+    '2to3to3to7-7': MultiSequenceRanksStrategy(
+        ['2', '3', '3', '7-7'], 
+        ['MA5', 1, 2, 3, 4], 
+        ['MA10', 1, 2, 3, 4], 
+        ['MA20', 1, 2, 3, 4], 
+        ['MA60', 4, 3, 2, 1]
+    ),
+    '2to2to3to7-7': MultiSequenceRanksStrategy(
+        ['2', '2', '3', '7-7'], 
+        ['MA5', 1, 2, 3, 4], 
+        ['MA10', 1, 2, 3, 4], 
+        ['MA20', 4, 2, 1, 3], 
+        ['MA60', 4, 3, 2, 1]
+    ),
+    '2to2to7-7to7-8': MultiSequenceRanksStrategy(
+        ['2', '2', '7-7', '7-8'], 
+        ['MA5', 2, 1, 3, 4], 
+        ['MA10', 1, 2, 3, 4], 
+        ['MA20', 3, 2, 3, 4], 
+        ['MA60', 3, 1, 2, 4]
+    ),
 }
+
 
 
 
