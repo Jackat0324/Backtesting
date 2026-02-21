@@ -162,6 +162,48 @@ class ThreeWeekSequenceStrategy(MultiSequenceStrategy):
         # MultiSequenceStrategy expects (T0, T-1, T-2)
         super().__init__([t0_seq, t1_seq, t2_seq])
 
+class MultiSequenceRanksStrategy(MultiSequenceStrategy):
+    def __init__(self, sequences: list, *ma_ranks: list):
+        """
+        sequences: List of shortcuts in Old-to-New order (e.g., [T-3, T-2, T-1, T])
+        ma_ranks: Variable args of ['MA_NAME', rank_t_minus_3, rank_t_minus_2, rank_t_minus_1, rank_today]
+        """
+        # MultiSequenceStrategy expects T, T-1, ... (New-to-Old)
+        super().__init__(sequences[::-1])
+        
+        self.rank_specs = []
+        for spec in ma_ranks:
+            ma_name = spec[0]
+            # Reverse ranks to match the shift index (shift 0 = today, shift 1 = T-1, etc.)
+            ranks = spec[1:][::-1]
+            self.rank_specs.append((ma_name, ranks))
+
+    def calculate_signals(self, df: pd.DataFrame) -> pd.Series:
+        # Get signals from base sequence logic (T, T-1, ...)
+        combined_condition = super().calculate_signals(df)
+        
+        # Check rank conditions for each spec (Temporal/Vertical Ranks)
+        for ma_name, target_ranks in self.rank_specs:
+            num_steps = len(target_ranks)
+            if num_steps == 0: continue
+            
+            # Create a temporary DF with columns representing each shift
+            temp_cols = {shift: df[ma_name].shift(shift) for shift in range(num_steps)}
+            temp_df = pd.DataFrame(temp_cols, index=df.index)
+            
+            # Rank values across time steps for this specific MA (Vertical)
+            # method='max' ensures larger values get higher ranks
+            temporal_ranks = temp_df.rank(axis=1, method='max')
+            
+            ma_condition = pd.Series(True, index=df.index)
+            for shift, target_rank in enumerate(target_ranks):
+                if target_rank is not None:
+                    ma_condition = ma_condition & (temporal_ranks[shift] == target_rank)
+            
+            combined_condition = combined_condition & ma_condition.fillna(False)
+        
+        return combined_condition
+
 # --- Strategy Lists for GUI ---
 
 DAILY_STRATEGIES = [
@@ -215,6 +257,12 @@ WEEKLY_STRATEGIES = [
     '10to10to1-1to10'
 ]
 
+WEEKLY_STRATEGIES_RANKS = [
+    '1to1to2to3',
+    '1to1to2to7-3',
+    '1to1to2to7-3-v2'
+]
+
 # --- Strategy Factory / Registry ---
 
 STRATEGY_MAP = {
@@ -265,8 +313,32 @@ STRATEGY_MAP = {
     'Ato2-3to7-1to7-9': MultiSequenceStrategy(['7-9', '7-1', '2-3', 'A']),
     'A+1toA+1to2-1to7-1': MultiSequenceStrategy(['7-1', '2-1', 'A+1', 'A+1']),
     'B4to2-3to2-3to7-2': MultiSequenceStrategy(['7-2', '2-3', '2-3', 'B4']),
-    '10to10to1-1to10': MultiSequenceStrategy(['10', '1-1', '10', '10'])
+    '10to10to1-1to10': MultiSequenceStrategy(['10', '1-1', '10', '10']),
+
+    # Weekly Ranks
+    '1to1to2to3': MultiSequenceRanksStrategy(
+        ['1', '1', '2', '3'], 
+        ['MA5', 1, 2, 3, 4], 
+        ['MA10', 4, 3, 2, 1], 
+        ['MA20', 4, 3, 2, 1], 
+        ['MA60', 4, 3, 2, 1]
+    ),
+    '1to1to2to7-3': MultiSequenceRanksStrategy(
+        ['1', '1', '2', '7-3'], 
+        ['MA5', 1, 2, 3, 4], 
+        ['MA10', 4, 3, 2, 1], 
+        ['MA20', 4, 3, 2, 1], 
+        ['MA60', 4, 3, 2, 1]
+    ),
+    '1to1to2to7-3-v2': MultiSequenceRanksStrategy(
+        ['1', '1', '2', '7-3'], 
+        ['MA5', 1, 2, 3, 4], 
+        ['MA10', 4, 3, 2, 1], 
+        ['MA20', 4, 3, 2, 1], 
+        ['MA60', 2, 2, 3, 4]
+    ),
 }
+
 
 def get_strategy(name: str) -> BaseStrategy:
     return STRATEGY_MAP.get(name)

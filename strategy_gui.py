@@ -747,6 +747,21 @@ class WeeklyStrategyFrame(StrategyFrame):
             logging.error("Plotting failed", exc_info=True)
             messagebox.showerror("繪圖錯誤", f"{str(e)}\n\n詳細錯誤已寫入 application.log")
 
+class WeeklyRanksStrategyFrame(WeeklyStrategyFrame):
+    """
+    繼承 WeeklyStrategyFrame 但使用位階策略列表
+    """
+    def __init__(self, parent):
+        super().__init__(parent)
+        
+        # 更新策略列表為位階策略
+        self.strategy_listbox.delete(0, tk.END)
+        strategies_list = strategies.WEEKLY_STRATEGIES_RANKS
+        for s in strategies_list:
+            self.strategy_listbox.insert(tk.END, s)
+        self.strategy_listbox.select_set(0)
+
+
 
 # ---------------------------------------------------------
 # Main App (Tabbed Interface)
@@ -781,6 +796,11 @@ class TWSEApp:
         # Tab 3: 策略回測 (週)
         self.tab_weekly = WeeklyStrategyFrame(self.notebook)
         self.notebook.add(self.tab_weekly, text="策略回測 (週K)")
+
+        # Tab 4: 策略回測 (位階)
+        self.tab_ranks = WeeklyRanksStrategyFrame(self.notebook)
+        self.notebook.add(self.tab_ranks, text="策略回測 (位階)")
+
 
 
 if __name__ == "__main__":
