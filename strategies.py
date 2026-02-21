@@ -260,8 +260,10 @@ WEEKLY_STRATEGIES = [
 WEEKLY_STRATEGIES_RANKS = [
     '1to1to2to3',
     '1to1to2to7-3',
-    '1to1to2to7-3-v2'
+    '1to1to2to7-3-v2',
+    '1to2to3to7-3'
 ]
+
 
 # --- Strategy Factory / Registry ---
 
@@ -337,7 +339,15 @@ STRATEGY_MAP = {
         ['MA20', 4, 3, 2, 1], 
         ['MA60', 2, 2, 3, 4]
     ),
+    '1to2to3to7-3': MultiSequenceRanksStrategy(
+        ['1', '2', '3', '7-3'], 
+        ['MA5', 1, 2, 3, 4], 
+        ['MA10', 3, 1, 2, 4], 
+        ['MA20', 1, 2, 3, 4], 
+        ['MA60', 4, 1, 2, 3]
+    ),
 }
+
 
 
 def get_strategy(name: str) -> BaseStrategy:
