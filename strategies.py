@@ -269,8 +269,12 @@ WEEKLY_STRATEGIES_RANKS = [
     '2to2to2to3',
     '2to3to3to7-7',
     '2to2to3to7-7',
-    '2to2to7-7to7-8'
+    '2to2to7-7to7-8',
+    '2to3to3to3-1',
+    '3to3to3to7-8',
+    '1-1to1-1toA+1toA+1'
 ]
+
 
 
 
@@ -411,7 +415,29 @@ STRATEGY_MAP = {
         ['MA20', 3, 2, 3, 4], 
         ['MA60', 3, 1, 2, 4]
     ),
+    '2to3to3to3-1': MultiSequenceRanksStrategy(
+        ['2', '3', '3', '3-1'], 
+        ['MA5', 2, 4, 3, 1], 
+        ['MA10', 1, 2, 3, 4], 
+        ['MA20', 4, 3, 2, 1], 
+        ['MA60', 4, 4, 3, 2]
+    ),
+    '3to3to3to7-8': MultiSequenceRanksStrategy(
+        ['3', '3', '3', '7-8'], 
+        ['MA5', 1, 2, 3, 4], 
+        ['MA10', 1, 2, 3, 4], 
+        ['MA20', 1, 2, 3, 4], 
+        ['MA60', 2, 2, 3, 4]
+    ),
+    '1-1to1-1toA+1toA+1': MultiSequenceRanksStrategy(
+        ['1-1', '1-1', 'A+1', 'A+1'], 
+        ['MA5', 4, 3, 1, 2], 
+        ['MA10', 4, 3, 2, 1], 
+        ['MA20', 1, 2, 3, 4], 
+        ['MA60', 4, 4, 3, 4]
+    ),
 }
+
 
 
 
