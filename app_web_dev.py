@@ -77,8 +77,7 @@ def render_chart_streamlit(code, name, signal_date, frequency, db_path, strategy
     ax.plot(df.index, df['MA5'], label='MA5', color='blue', linewidth=1)
     ax.plot(df.index, df['MA10'], label='MA10', color='orange', linewidth=1)
     ax.plot(df.index, df['MA20'], label='MA20', color='purple', linewidth=1)
-    if frequency == 'W':
-        ax.plot(df.index, df['MA60'], label='MA60', color='brown', linewidth=1)
+    ax.plot(df.index, df['MA60'], label='MA60', color='brown', linewidth=1)
 
     # 訊號線
     if signal_date:
@@ -88,8 +87,7 @@ def render_chart_streamlit(code, name, signal_date, frequency, db_path, strategy
             ax.axvline(x=idx_matches[0], color='lime', linestyle='--', linewidth=2, alpha=0.5, label='訊號日')
 
     # Y 軸自動縮放
-    cols = ['最低', '最高', 'MA5', 'MA10', 'MA20']
-    if frequency == 'W': cols.append('MA60')
+    cols = ['最低', '最高', 'MA5', 'MA10', 'MA20', 'MA60']
     y_min, y_max = df[cols].min().min(), df[cols].max().max()
     if pd.notna(y_min):
         margin = (y_max - y_min) * 0.1
