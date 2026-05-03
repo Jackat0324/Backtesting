@@ -204,6 +204,28 @@ class MultiSequenceRanksStrategy(MultiSequenceStrategy):
         
         return combined_condition
 
+class MultiSequenceRanksStrategy_by5M_1(MultiSequenceRanksStrategy):
+    def __init__(self, sequences: list, *ma_ranks: list):
+        super().__init__(sequences, *ma_ranks)
+
+    def calculate_signals(self, df: pd.DataFrame) -> pd.Series:
+        # Get signals from base sequence logic and rank logic
+        combined_condition = super().calculate_signals(df)
+        
+        ma5 = df['MA5']
+        
+        # 連續3日五日均線遞減 (T-1 < T-2, T-2 < T-3, T-3 < T-4)
+        dec_1 = ma5.shift(1) < ma5.shift(2)
+        dec_2 = ma5.shift(2) < ma5.shift(3)
+        dec_3 = ma5.shift(3) < ma5.shift(4)
+        
+        # 當日五均線不再遞減 (T >= T-1)
+        not_dec = ma5 >= ma5.shift(1)
+        
+        ma5_condition = dec_1 & dec_2 & dec_3 & not_dec
+        
+        return combined_condition & ma5_condition.fillna(False)
+
 # --- Strategy Lists for GUI ---
 
 DAILY_STRATEGIES = [
@@ -245,7 +267,15 @@ DAILY_STRATEGIES_RANKS = [
     'A+1to7-1to7-9to7-9_Daily',
     'B4to2-3to2-3to7-2_Daily',
     'B1toB3toBtoB1_Daily',
-    'B1toB3toBto1-1_Daily'
+    'B1toB3toBto1-1_Daily',
+    '7-5to1to1to1to1_by5M_1_Daily',
+    '1to1to1to1to1_by5M_1_Daily',
+    '1to1to1to1to2_by5M_1_Daily',
+    '2to1to1to1to1_by5M_1_Daily',
+    '2to2to1to1to1_by5M_1_Daily',
+    '7-5to7-5to1to1to1_by5M_1_Daily',
+    'AtoAtoAto1to1_by5M_1_Daily',
+    'Bto1to1to1to1_by5M_1_Daily'
 ]
 
 
@@ -301,7 +331,15 @@ WEEKLY_STRATEGIES_RANKS = [
     'A+1to7-1to7-9to7-9',
     'B4to2-3to2-3to7-2',
     'B1toB3toBtoB1',
-    'B1toB3toBto1-1'
+    'B1toB3toBto1-1',
+    '7-5to1to1to1to1_by5M_1',
+    '1to1to1to1to1_by5M_1',
+    '1to1to1to1to2_by5M_1',
+    '2to1to1to1to1_by5M_1',
+    '2to2to1to1to1_by5M_1',
+    '7-5to7-5to1to1to1_by5M_1',
+    'AtoAtoAto1to1_by5M_1',
+    'Bto1to1to1to1_by5M_1'
 ]
 
 
@@ -500,6 +538,30 @@ STRATEGY_MAP = {
         ['MA20', 1, 3, 2, 4], 
         ['MA60', 2, 2, 3, 4]
     ),
+    '7-5to1to1to1to1_by5M_1': MultiSequenceRanksStrategy_by5M_1(
+        ['7-5', '1', '1', '1', '1']
+    ),
+    '1to1to1to1to1_by5M_1': MultiSequenceRanksStrategy_by5M_1(
+        ['1', '1', '1', '1', '1']
+    ),
+    '1to1to1to1to2_by5M_1': MultiSequenceRanksStrategy_by5M_1(
+        ['1', '1', '1', '1', '2']
+    ),
+    '2to1to1to1to1_by5M_1': MultiSequenceRanksStrategy_by5M_1(
+        ['2', '1', '1', '1', '1']
+    ),
+    '2to2to1to1to1_by5M_1': MultiSequenceRanksStrategy_by5M_1(
+        ['2', '2', '1', '1', '1']
+    ),
+    '7-5to7-5to1to1to1_by5M_1': MultiSequenceRanksStrategy_by5M_1(
+        ['7-5', '7-5', '1', '1', '1']
+    ),
+    'AtoAtoAto1to1_by5M_1': MultiSequenceRanksStrategy_by5M_1(
+        ['A', 'A', 'A', '1', '1']
+    ),
+    'Bto1to1to1to1_by5M_1': MultiSequenceRanksStrategy_by5M_1(
+        ['B', '1', '1', '1', '1']
+    ),
 
     # Daily Ranks
     '1to1to2to3_Daily': MultiSequenceRanksStrategy(['1', '1', '2', '3'], ['MA5', 1, 2, 3, 4], ['MA10', 4, 3, 2, 1], ['MA20', 4, 3, 2, 1], ['MA60', 4, 3, 2, 1]),
@@ -522,7 +584,16 @@ STRATEGY_MAP = {
     'B4to2-3to2-3to7-2_Daily': MultiSequenceRanksStrategy(['B4', '2-3', '2-3', '7-2'], ['MA5', 1, 2, 3, 4], ['MA10', 4, 3, 2, 1], ['MA20', 1, 2, 3, 4], ['MA60', 1, 2, 3, 4]),
     'B1toB3toBtoB1_Daily': MultiSequenceRanksStrategy(['B1', 'B3', 'B', 'B1'], ['MA5', 4, 2, 1, 3], ['MA10', 2, 4, 3, 1], ['MA20', 1, 3, 2, 4], ['MA60', 4, 3, 2, 1]),
     'B1toB3toBto1-1_Daily': MultiSequenceRanksStrategy(['B1', 'B3', 'B', '1-1'], ['MA5', 3, 1, 2, 4], ['MA10', 2, 1, 3, 4], ['MA20', 1, 3, 2, 4], ['MA60', 2, 2, 3, 4]),
+    '7-5to1to1to1to1_by5M_1_Daily': MultiSequenceRanksStrategy_by5M_1(['7-5', '1', '1', '1', '1']),
+    '1to1to1to1to1_by5M_1_Daily': MultiSequenceRanksStrategy_by5M_1(['1', '1', '1', '1', '1']),
+    '1to1to1to1to2_by5M_1_Daily': MultiSequenceRanksStrategy_by5M_1(['1', '1', '1', '1', '2']),
+    '2to1to1to1to1_by5M_1_Daily': MultiSequenceRanksStrategy_by5M_1(['2', '1', '1', '1', '1']),
+    '2to2to1to1to1_by5M_1_Daily': MultiSequenceRanksStrategy_by5M_1(['2', '2', '1', '1', '1']),
+    '7-5to7-5to1to1to1_by5M_1_Daily': MultiSequenceRanksStrategy_by5M_1(['7-5', '7-5', '1', '1', '1']),
+    'AtoAtoAto1to1_by5M_1_Daily': MultiSequenceRanksStrategy_by5M_1(['A', 'A', 'A', '1', '1']),
+    'Bto1to1to1to1_by5M_1_Daily': MultiSequenceRanksStrategy_by5M_1(['B', '1', '1', '1', '1']),
 }
+
 
 
 
