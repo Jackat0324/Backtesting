@@ -273,7 +273,10 @@ DAILY_STRATEGIES = [
     '2to3to7-7_Daily',
     '2to3to7-8_Daily',
     '3to3to7-7_Daily',
-    '3to3to7-8_Daily'
+    '3to3to7-8_Daily',
+    'B4toB4to2-3_Daily',
+    '7-7to7-7to7-7_Daily',
+    '7-7to7-7to7-8_Daily'
 ]
 
 DAILY_STRATEGIES_RANKS = [
@@ -366,7 +369,10 @@ WEEKLY_STRATEGIES = [
     '2to3to7-7',
     '2to3to7-8',
     '3to3to7-7',
-    '3to3to7-8'
+    '3to3to7-8',
+    'B4toB4to2-3',
+    '7-7to7-7to7-7',
+    '7-7to7-7to7-8'
 ]
 
 WEEKLY_STRATEGIES_RANKS = [
@@ -452,6 +458,9 @@ STRATEGY_MAP = {
     '2to3to7-8_Daily': MultiSequenceStrategy(['7-8', '3', '2']),
     '3to3to7-7_Daily': MultiSequenceStrategy(['7-7', '3', '3']),
     '3to3to7-8_Daily': MultiSequenceStrategy(['7-8', '3', '3']),
+    'B4toB4to2-3_Daily': MultiSequenceStrategy(['2-3', 'B4', 'B4']),
+    '7-7to7-7to7-7_Daily': MultiSequenceStrategy(['7-7', '7-7', '7-7']),
+    '7-7to7-7to7-8_Daily': MultiSequenceStrategy(['7-8', '7-7', '7-7']),
     
     # Weekly
     '2-2to2-2to2-2to7-3': MultiSequenceStrategy(['7-3', '2-2', '2-2', '2-2']),
@@ -512,6 +521,9 @@ STRATEGY_MAP = {
     '2to3to7-8': MultiSequenceStrategy(['7-8', '3', '2']),
     '3to3to7-7': MultiSequenceStrategy(['7-7', '3', '3']),
     '3to3to7-8': MultiSequenceStrategy(['7-8', '3', '3']),
+    'B4toB4to2-3': MultiSequenceStrategy(['2-3', 'B4', 'B4']),
+    '7-7to7-7to7-7': MultiSequenceStrategy(['7-7', '7-7', '7-7']),
+    '7-7to7-7to7-8': MultiSequenceStrategy(['7-8', '7-7', '7-7']),
 
     # Weekly Ranks
     '1to1to2to3': MultiSequenceRanksStrategy(
