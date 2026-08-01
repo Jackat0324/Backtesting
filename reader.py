@@ -524,7 +524,10 @@ def run(args) -> None:
             logging.info("收尾入庫 %d 筆（總計 %d）", inserted, total_inserted)
 
     logging.info("完成。DB 路徑：%s；資料夾：%s", db_path.resolve(), data_dir.resolve())
-    print(f"🎉 全部完成，總共處理 {total_inserted} 筆資料")
+    try:
+        print(f"🎉 全部完成，總共處理 {total_inserted} 筆資料")
+    except UnicodeEncodeError:
+        print(f"全部完成，總共處理 {total_inserted} 筆資料")
     print(f"DB：{db_path.resolve()}")
     print(f"快取資料夾：{data_dir.resolve()}")
 
