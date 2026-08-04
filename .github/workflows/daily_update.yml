@@ -49,6 +49,7 @@ jobs:
           gh release upload database-storage data/twse_data.db --clobber
 
       - name: Notify Discord
+        if: env.DISCORD_WEBHOOK != ''
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: |
