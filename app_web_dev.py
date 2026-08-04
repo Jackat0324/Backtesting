@@ -117,21 +117,9 @@ def get_latest_date_and_time(db_path):
             
             try:
                 dt = datetime.strptime(download_time_str, "%Y-%m-%d %H:%M:%S")
-                is_utc = False
-                try:
-                    import subprocess
-                    import os
-                    cwd = os.path.dirname(db_path)
-                    author = subprocess.check_output(
-                        ["git", "log", "-n", "1", "--format=%an"],
-                        cwd=cwd,
-                        text=True,
-                        stderr=subprocess.DEVNULL
-                    ).strip()
-                    if "Action" in author:
-                        is_utc = True
-                except Exception:
-                    is_utc = dt.hour < 13
+                # 判斷是否為 UTC 時間：由於台股收盤資料在台北時間 13:30 之前不可能產生，
+                # 因此若資料庫紀錄的小時數小於 13，代表該時間必定是 GitHub Action (UTC 時區) 寫入的，需加 8 小時轉換為台北時間。
+                is_utc = dt.hour < 13
                 
                 if is_utc:
                     dt = dt + timedelta(hours=8)
