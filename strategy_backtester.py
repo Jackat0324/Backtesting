@@ -95,6 +95,20 @@ class StrategyBacktester:
         df_all['MA20'] = grouped_close.transform(lambda x: x.rolling(window=20).mean())
         df_all['MA60'] = grouped_close.transform(lambda x: x.rolling(window=60).mean())
         
+        # --- 效能優化: 預先計算所有股票的排列順序代號 (快取) ---
+        columns = ['MA5', 'MA10', 'MA20', 'MA60']
+        ranks = df_all[columns].rank(axis=1, ascending=False, method='first')
+        ranks_int = ranks.fillna(0).astype(int)
+        ranks_str = (
+            ranks_int['MA5'].astype(str) + '-' +
+            ranks_int['MA10'].astype(str) + '-' +
+            ranks_int['MA20'].astype(str) + '-' +
+            ranks_int['MA60'].astype(str)
+        )
+        ranks_to_code = {f"{v.index(5)+1}-{v.index(10)+1}-{v.index(20)+1}-{v.index(60)+1}": k 
+                         for k, v in strategies.SEQUENCE_SHORTCUTS.items()}
+        df_all['Sequence'] = ranks_str.map(ranks_to_code).fillna("N/A")
+        
         all_results = []
 
         # 針對每一檔股票分組處理
@@ -218,6 +232,20 @@ class StrategyBacktester:
         df_weekly_all['MA10'] = w_grouped_close.transform(lambda x: x.rolling(window=10).mean())
         df_weekly_all['MA20'] = w_grouped_close.transform(lambda x: x.rolling(window=20).mean())
         df_weekly_all['MA60'] = w_grouped_close.transform(lambda x: x.rolling(window=60).mean())
+        
+        # --- 效能優化: 預先計算所有股票的排列順序代號 (快取) ---
+        columns = ['MA5', 'MA10', 'MA20', 'MA60']
+        ranks = df_weekly_all[columns].rank(axis=1, ascending=False, method='first')
+        ranks_int = ranks.fillna(0).astype(int)
+        ranks_str = (
+            ranks_int['MA5'].astype(str) + '-' +
+            ranks_int['MA10'].astype(str) + '-' +
+            ranks_int['MA20'].astype(str) + '-' +
+            ranks_int['MA60'].astype(str)
+        )
+        ranks_to_code = {f"{v.index(5)+1}-{v.index(10)+1}-{v.index(20)+1}-{v.index(60)+1}": k 
+                         for k, v in strategies.SEQUENCE_SHORTCUTS.items()}
+        df_weekly_all['Sequence'] = ranks_str.map(ranks_to_code).fillna("N/A")
 
         all_results = []
         grouped = df_weekly_all.groupby('代號')

@@ -86,6 +86,8 @@ SEQUENCE_SHORTCUTS = {
     'A+1': [10, 20, 5, 60]
 }
 
+REVERSE_SHORTCUTS = {tuple(v): k for k, v in SEQUENCE_SHORTCUTS.items()}
+
 # --- Weekly & Daily Sequence Strategies ---
 # (Commonly used with SEQUENCE_SHORTCUTS)
 
@@ -121,10 +123,20 @@ class MultiSequenceStrategy(BaseStrategy):
             except Exception as e:
                 return pd.Series(False, index=df.index)
         else:
-            # Handle standard list of MAs (e.g., ['MA60', 'MA20', 'MA10', 'MA5'])
             if not seq:
                 return pd.Series(True, index=df.index)
-                
+            # 快取判定邏輯 (以位階代號快取直接比對)
+            if 'Sequence' in df.columns:
+                try:
+                    # e.g., ['MA60', 'MA20', 'MA10', 'MA5'] -> (60, 20, 10, 5)
+                    periods = tuple(int(x[2:]) for x in seq)
+                    shortcut_code = REVERSE_SHORTCUTS.get(periods)
+                    if shortcut_code:
+                        return (df['Sequence'].shift(shift) == shortcut_code).fillna(False)
+                except Exception:
+                    pass
+
+            # Fallback 比較邏輯
             conditions = []
             for i in range(len(seq) - 1):
                 conditions.append(df[seq[i]].shift(shift) > df[seq[i+1]].shift(shift))
