@@ -109,13 +109,20 @@ def render_chart_streamlit(code, name, signal_date, frequency, db_path, strategy
         plt.close(fig) # 重要：釋放記憶體
     except Exception as e:
         st.error(f"渲染圖表時發生錯誤: {e}")
-        st.info("提示：這通常是字型或 Matplotlib 在雲端環境的相容性問題。")
+def get_latest_date(db_path):
+    try:
+        with sqlite3.connect(db_path) as conn:
+            df_info = pd.read_sql("SELECT MAX(日期) as end FROM stock_prices", conn)
+            return df_info['end'][0]
+    except Exception:
+        return "無法讀取"
 
 def main():
     st.title("🚀 TWSE 策略回測雲端儀表板")
-    st.info("這是一個基於 Streamlit 的網頁介面，展示您的策略回測結果與即時線圖。")
-
     bt = get_backtester()
+    latest_date = get_latest_date(bt.db_path)
+    
+    st.info(f"這是一個基於 Streamlit 的網頁介面，展示您的策略回測結果與即時線圖。 (最後資料日期: **{latest_date}**)")
 
     # --- Sidebar ---
     st.sidebar.header("⚙️ 掃描設定")

@@ -103,11 +103,19 @@ def render_chart_streamlit(code, name, signal_date, frequency, db_path, strategy
 
     st.pyplot(fig)
 
+def get_latest_date(db_path):
+    try:
+        with sqlite3.connect(db_path) as conn:
+            df_info = pd.read_sql("SELECT MAX(日期) as end FROM stock_prices", conn)
+            return df_info['end'][0]
+    except Exception:
+        return "無法讀取"
+
 def main():
     st.title("🚀 TWSE 策略回測雲端儀表板 (Prototype)")
-    st.info("這是一個基於 Streamlit 的網頁介面原型，展示如何將您的回測系統雲端化。")
-
     bt = get_backtester()
+    latest_date = get_latest_date(bt.db_path)
+    st.info(f"這是一個基於 Streamlit 的網頁介面原型，展示如何將您的回測系統雲端化。 (最後資料日期: **{latest_date}**)")
 
     # --- Sidebar ---
     st.sidebar.header("⚙️ 掃描設定")
