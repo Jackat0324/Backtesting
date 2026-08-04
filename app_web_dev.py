@@ -103,6 +103,55 @@ def render_chart_streamlit(code, name, signal_date, frequency, db_path, strategy
 
     st.pyplot(fig)
 
+def render_sequence_table(code, center_date, frequency, db_path):
+    try:
+        p = plotter.StockPlotter(db_path)
+        df = p.get_stock_data(code, center_date=center_date, frequency=frequency)
+        if df is None or df.empty:
+            return
+        
+        c_dt = pd.to_datetime(center_date)
+        df_target = df[df['日期'] <= c_dt]
+        if df_target.empty:
+            df_target = df
+            
+        df_last20 = df_target.tail(20).copy()
+        
+        reverse_shortcuts = {tuple(v): k for k, v in strategies.SEQUENCE_SHORTCUTS.items()}
+        
+        table_rows = []
+        for idx, row in df_last20.iterrows():
+            d_str = row['日期'].strftime('%Y-%m-%d')
+            ma5 = row.get('MA5')
+            ma10 = row.get('MA10')
+            ma20 = row.get('MA20')
+            ma60 = row.get('MA60')
+            
+            if pd.isna(ma5) or pd.isna(ma10) or pd.isna(ma20) or pd.isna(ma60):
+                code_val = "N/A"
+                order_val = "資料不足"
+            else:
+                pairs = [(5, ma5), (10, ma10), (20, ma20), (60, ma60)]
+                pairs_sorted = sorted(pairs, key=lambda x: x[1], reverse=True)
+                perm = tuple(p[0] for p in pairs_sorted)
+                code_val = reverse_shortcuts.get(perm, "其他")
+                order_val = " > ".join(f"{p[0]}MA" for p in pairs_sorted)
+                
+            table_rows.append({
+                "日期": d_str,
+                "均線位階代號": code_val,
+                "均線排列順序": order_val
+            })
+            
+        df_display = pd.DataFrame(table_rows)
+        df_display = df_display.iloc[::-1].reset_index(drop=True)
+        
+        st.write("📋 **近 20 日均線位階歷史紀錄**" if frequency == 'D' else "📋 **近 20 週均線位階歷史紀錄**")
+        st.dataframe(df_display, use_container_width=True, hide_index=True, height=250)
+        
+    except Exception as e:
+        st.error(f"計算均線位階表時發生錯誤: {e}")
+
 def get_latest_date_and_time(db_path):
     try:
         with sqlite3.connect(db_path) as conn:
@@ -319,6 +368,7 @@ def main():
                 strat = str(row['策略'])
                 
                 st.markdown(f"#### 📊 {code} {name} (策略: {strat})")
+                render_sequence_table(code, s_date, res_mode_key, bt.db_path)
                 render_chart_streamlit(code, name, s_date, res_mode_key, bt.db_path, strategy_name=strat)
                 st.write("---")
 
