@@ -464,6 +464,27 @@ def as_rows(df: pd.DataFrame) -> Iterable[Tuple]:
             r.日期, r.代號, r.名稱, r.開盤, r.最高, r.最低, r.收盤, volume_value, r.資料來源, r.下載時間
         )
 
+def prune_database(db_path: Path, years: float) -> None:
+    logging.info("開始清理資料庫，僅保留最近 %.1f 年的資料...", years)
+    cutoff_date = (date.today() - timedelta(days=int(365 * years))).strftime("%Y-%m-%d")
+    logging.info("截止日期：%s (在此日期之前的資料將被刪除)", cutoff_date)
+    try:
+        with sqlite3.connect(db_path) as conn:
+            cur = conn.cursor()
+            cur.execute("DELETE FROM stock_prices WHERE 日期 < ?", (cutoff_date,))
+            deleted_rows = cur.rowcount
+            logging.info("已刪除 %d 筆舊資料。", deleted_rows)
+            conn.commit()
+            
+        # 執行 VACUUM 必須在交易外部（autocommit 模式）
+        with sqlite3.connect(db_path, isolation_level=None) as conn:
+            logging.info("執行資料庫壓縮 (VACUUM)...")
+            conn.execute("VACUUM")
+            
+        logging.info("資料庫清理與壓縮完成。")
+    except Exception as exc:
+        logging.error("清理資料庫時發生錯誤：%s", exc)
+
 def run(args) -> None:
     setup_logging(args.log_level, Path(args.data_dir))
     session = make_session(max_retries=args.max_retries, backoff=0.6, timeout=12, verify=not args.no_verify)
@@ -523,6 +544,9 @@ def run(args) -> None:
             total_inserted += inserted
             logging.info("收尾入庫 %d 筆（總計 %d）", inserted, total_inserted)
 
+    if args.prune_years:
+        prune_database(db_path, args.prune_years)
+
     logging.info("完成。DB 路徑：%s；資料夾：%s", db_path.resolve(), data_dir.resolve())
     try:
         print(f"🎉 全部完成，總共處理 {total_inserted} 筆資料")
@@ -554,6 +578,7 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     p.add_argument("--refresh-calendar", action="store_true", help="忽略快取，強制重新抓取交易日行事曆")
     p.add_argument("--halt-on-fail", type=int, default=20, help="連續抓取失敗達指定次數後提前停止（0 表示不停）")
     p.add_argument("--no-verify", action="store_true", help="停用 SSL 憑證驗證 (慎用)")
+    p.add_argument("--prune-years", type=float, help="僅保留最近 N 年的資料，並進行資料庫壓縮 (VACUUM)")
     return p.parse_args(argv)
 
 if __name__ == "__main__":

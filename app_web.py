@@ -142,9 +142,25 @@ def get_latest_date_and_time(db_path):
     except Exception:
         return "無法讀取", "無法讀取"
 
+import urllib.request
+from pathlib import Path
+
+def check_and_download_db(db_path):
+    db_path = Path(db_path)
+    if not db_path.exists():
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+        url = "https://github.com/Jackat0324/Backtesting/releases/download/database-storage/twse_data.db"
+        with st.spinner("首次載入：正在從 GitHub 下載最新股票資料庫 (約 35MB)..."):
+            try:
+                urllib.request.urlretrieve(url, db_path)
+                st.success("資料庫下載完成！")
+            except Exception as e:
+                st.error(f"資料庫下載失敗: {e}")
+
 def main():
     st.title("🚀 TWSE 策略回測雲端儀表板")
     bt = get_backtester()
+    check_and_download_db(bt.db_path)
     latest_date, update_time = get_latest_date_and_time(bt.db_path)
     
     st.info(f"這是一個基於 Streamlit 的網頁介面，展示您的策略回測結果與即時線圖。 (最後資料日期: **{latest_date}**，更新時間: **{update_time}**)")

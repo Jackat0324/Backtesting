@@ -29,18 +29,24 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Download Database from Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p data
+          gh release download database-storage --pattern "twse_data.db" --dir data --clobber || echo "Release not found, skipping download"
+
       - name: Run data reader
         run: |
           mkdir -p data
-          python reader.py --days 15 --no-verify --halt-on-fail 100
+          python reader.py --days 15 --no-verify --halt-on-fail 100 --prune-years 1
 
-      - name: Commit and push changes
+      - name: Upload Database to Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git config --global user.name "GitHub Action"
-          git config --global user.email "action@github.com"
-          git add -f data/twse_data.db
-          git commit -m "Automated data update: $(date +'%Y-%m-%d')" || exit 0
-          git push
+          gh release create database-storage --title "Database Storage" --notes "存放最新的股票資料庫" || true
+          gh release upload database-storage data/twse_data.db --clobber
 
       - name: Notify Discord
         env:
