@@ -1,19 +1,17 @@
 import os
-import sqlite3
 import requests
 import json
 from datetime import datetime
+from db_manager import DatabaseManager
 
 def get_db_summary(db_path):
     """取得資料庫簡要統計訊息"""
     if not os.path.exists(db_path):
         return "資料庫檔案不存在"
     try:
-        with sqlite3.connect(db_path) as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT MIN(日期), MAX(日期), COUNT(*) FROM stock_prices")
-            start, end, count = cursor.fetchone()
-            return f"- **總資料筆數**: {count:,}\n- **資料範圍**: {start} ~ {end}"
+        db = DatabaseManager(db_path)
+        start, end, count, _ = db.get_detailed_stats()
+        return f"- **總資料筆數**: {count:,}\n- **資料範圍**: {start} ~ {end}"
     except Exception as e:
         return f"無法讀取資料庫統計: {e}"
 

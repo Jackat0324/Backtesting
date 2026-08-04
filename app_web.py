@@ -2,8 +2,8 @@ import streamlit as st
 # Trigger reload
 import pandas as pd
 from datetime import date, timedelta, datetime
-import sqlite3
 import strategy_backtester
+from db_manager import DatabaseManager
 import strategies
 import plotter
 import logging
@@ -160,36 +160,31 @@ def render_sequence_table(code, center_date, frequency, db_path):
 
 def get_latest_date_and_time(db_path):
     try:
-        with sqlite3.connect(db_path) as conn:
-            df_info = pd.read_sql(
-                "SELECT 日期, 下載時間 FROM stock_prices WHERE 日期 = (SELECT MAX(日期) FROM stock_prices) LIMIT 1",
-                conn
-            )
-            if df_info.empty:
-                return "未知", "未知"
-            latest_date = df_info['日期'][0]
-            download_time_str = df_info['下載時間'][0]
+        db = DatabaseManager(db_path)
+        latest_date, download_time_str = db.get_latest_data_info()
+        if not latest_date:
+            return "未知", "未知"
             
-            try:
-                dt = datetime.strptime(download_time_str, "%Y-%m-%d %H:%M:%S")
-                # 判斷是否為 UTC 時間：由於台股收盤資料在台北時間 13:30 之前不可能產生，
-                # 因此若資料庫紀錄的小時數小於 13，代表該時間必定是 GitHub Action (UTC 時區) 寫入的，需加 8 小時轉換為台北時間。
-                is_utc = dt.hour < 13
-                
-                if is_utc:
-                    dt = dt + timedelta(hours=8)
-                
-                period = "上午" if dt.hour < 12 else "下午"
-                h = dt.hour if dt.hour <= 12 else dt.hour - 12
-                if h == 0:
-                    h = 12
-                time_str = f"台北時間 {period} {h}:{dt.minute:02d}"
-            except Exception:
-                time_str = download_time_str
-                
-            return latest_date, time_str
-    except Exception:
-        return "無法讀取", "無法讀取"
+        try:
+            dt = datetime.strptime(download_time_str, "%Y-%m-%d %H:%M:%S")
+            # 判斷是否為 UTC 時間：由於台股收盤資料在台北時間 13:30 之前不可能產生，
+            # 因此若資料庫紀錄的小時數小於 13，代表該時間必定是 GitHub Action (UTC 時區) 寫入的，需加 8 小時轉換為台北時間。
+            is_utc = dt.hour < 13
+            
+            if is_utc:
+                dt = dt + timedelta(hours=8)
+            
+            period = "上午" if dt.hour < 12 else "下午"
+            h = dt.hour if dt.hour <= 12 else dt.hour - 12
+            if h == 0:
+                h = 12
+            time_str = f"台北時間 {period} {h}:{dt.minute:02d}"
+        except Exception:
+            time_str = download_time_str
+            
+        return latest_date, time_str
+    except Exception as e:
+        return "未知", f"讀取錯誤: {e}"
 
 import urllib.request
 from pathlib import Path
@@ -268,20 +263,19 @@ def main():
     st.sidebar.divider()
     with st.sidebar.expander("📊 數據庫狀態", expanded=False):
         try:
-            with sqlite3.connect(bt.db_path) as conn:
-                df_info = pd.read_sql("SELECT MIN(日期) as start, MAX(日期) as end, COUNT(*) as count FROM stock_prices", conn)
-                st.write(f"**資料筆數**: {df_info['count'][0]:,}")
-                st.write(f"**起始日期**: {df_info['start'][0]}")
-                st.write(f"**最後日期**: {df_info['end'][0]}")
-                
-                # 簡單檢查週線數據是否足夠 (MA60 需要約 300 交易日)
-                days_count = pd.read_sql("SELECT COUNT(DISTINCT 日期) as d_count FROM stock_prices", conn)['d_count'][0]
-                if days_count < 300 and is_weekly:
-                    st.warning("⚠️ 數據不足 300 天，週線 MA60 策略可能無法產生訊號。")
-                elif days_count >= 300:
-                    st.success("✅ 數據充足")
-        except:
-            st.error("無法讀取資料庫狀態")
+            db = DatabaseManager(bt.db_path)
+            d_start_val, d_end_val, total_count, days_count = db.get_detailed_stats()
+            st.write(f"**資料筆數**: {total_count:,}")
+            st.write(f"**起始日期**: {d_start_val}")
+            st.write(f"**最後日期**: {d_end_val}")
+            
+            # 簡單檢查週線數據是否足夠 (MA60 需要約 300 交易日)
+            if days_count < 300 and is_weekly:
+                st.warning("⚠️ 數據不足 300 天，週線 MA60 策略可能無法產生訊號。")
+            elif days_count >= 300:
+                st.success("✅ 數據充足")
+        except Exception as e:
+            st.error(f"無法讀取資料庫狀態: {e}")
 
     # --- Initialize Session State ---
     if 'df_res' not in st.session_state:

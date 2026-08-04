@@ -1,9 +1,9 @@
-import sqlite3
 import pandas as pd
 from pathlib import Path
 from datetime import datetime, timedelta
 import logging
 import strategies
+from db_manager import DatabaseManager
 
 # 預設資料庫路徑 (假設與 reader.py 同目錄下的 data/twse_data.db)
 # 預設資料庫路徑 (假設與 reader.py 同目錄下的 data/twse_data.db)
@@ -20,6 +20,7 @@ DEFAULT_DB_PATH = BASE_DIR / "data" / "twse_data.db"
 class StrategyBacktester:
     def __init__(self, db_path=None):
         self.db_path = Path(db_path) if db_path else DEFAULT_DB_PATH
+        self.db = DatabaseManager(self.db_path)
 
     def load_data(self, start_date=None, end_date=None):
         """從資料庫讀取股票資料 (增加日期過濾以提升效能)"""
@@ -27,32 +28,7 @@ class StrategyBacktester:
         if not self.db_path.exists():
             raise FileNotFoundError(f"資料庫不存在: {self.db_path}")
         
-        # 連接 DB
-        with sqlite3.connect(self.db_path) as conn:
-            # 讀取必要欄位，並依照 代號, 日期 排序
-            if start_date or end_date:
-                query = """
-                SELECT 日期, 代號, 名稱, 開盤, 最高, 最低, 收盤
-                FROM stock_prices
-                WHERE 1=1
-                """
-                params = []
-                if start_date:
-                    query += " AND 日期 >= ?"
-                    params.append(start_date)
-                if end_date:
-                    query += " AND 日期 <= ?"
-                    params.append(end_date)
-                
-                query += " ORDER BY 代號, 日期"
-                df = pd.read_sql(query, conn, params=params)
-            else:
-                query = """
-                SELECT 日期, 代號, 名稱, 開盤, 最高, 最低, 收盤
-                FROM stock_prices
-                ORDER BY 代號, 日期
-                """
-                df = pd.read_sql(query, conn)
+        df = self.db.load_all_prices(start_date=start_date, end_date=end_date)
             
         # 轉換日期格式
         df['日期'] = pd.to_datetime(df['日期'])

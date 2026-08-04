@@ -18,6 +18,7 @@ from logging.handlers import RotatingFileHandler
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import List, Optional, Iterable, Tuple
+from db_manager import DatabaseManager
 
 import pandas as pd
 import requests
@@ -111,68 +112,6 @@ def _with_timeout_and_verify(request_func, timeout: int, verify: bool):
 
 # ---------------------------
 # DB
-# ---------------------------
-
-def init_db(db_path: Path) -> None:
-    logging.info("初始化 SQLite：%s", db_path)
-    db_path.parent.mkdir(parents=True, exist_ok=True)
-    with sqlite3.connect(db_path) as conn:
-        cur = conn.cursor()
-        cur.execute(
-            """
-            CREATE TABLE IF NOT EXISTS stock_prices (
-                日期 TEXT,
-                代號 TEXT,
-                名稱 TEXT,
-                開盤 REAL,
-                最高 REAL,
-                最低 REAL,
-                收盤 REAL,
-                成交金額 INTEGER CHECK(成交金額 >= 0),
-                資料來源 TEXT,
-                下載時間 TEXT,
-                PRIMARY KEY (日期, 代號)
-            )
-            """
-        )
-        # (A) 索引＋PRAGMA 提升批次效能
-        info = {row[1]: (row[2] or "").upper() for row in cur.execute("PRAGMA table_info(stock_prices)")}
-        if info.get("成交金額") and info["成交金額"] not in {"INTEGER", "INT"}:
-            logging.warning("資料表 stock_prices 的「成交金額」欄位型別為 %s，建議調整為 INTEGER。", info["成交金額"])
-        cur.execute("""
-            CREATE INDEX IF NOT EXISTS idx_stock_prices_code_date
-            ON stock_prices(代號, 日期)
-        """)
-        cur.execute("PRAGMA journal_mode=WAL;")
-        cur.execute("PRAGMA synchronous=NORMAL;")
-        conn.commit()
-
-def bulk_upsert(db_path: Path, rows: Iterable[Tuple]) -> int:
-    rows = list(rows)
-    if not rows:
-        return 0
-    with sqlite3.connect(db_path) as conn:
-        cur = conn.cursor()
-        cur.executemany(
-            """
-            INSERT INTO stock_prices
-            (日期, 代號, 名稱, 開盤, 最高, 最低, 收盤, 成交金額, 資料來源, 下載時間)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(日期, 代號) DO UPDATE SET
-                名稱=excluded.名稱,
-                開盤=excluded.開盤,
-                最高=excluded.最高,
-                最低=excluded.最低,
-                收盤=excluded.收盤,
-                成交金額=excluded.成交金額,
-                資料來源=excluded.資料來源,
-                下載時間=excluded.下載時間
-            """,
-            rows,
-        )
-        conn.commit()
-        return cur.rowcount
-
 # ---------------------------
 # 交易日行事曆
 # ---------------------------
@@ -464,34 +403,14 @@ def as_rows(df: pd.DataFrame) -> Iterable[Tuple]:
             r.日期, r.代號, r.名稱, r.開盤, r.最高, r.最低, r.收盤, volume_value, r.資料來源, r.下載時間
         )
 
-def prune_database(db_path: Path, years: float) -> None:
-    logging.info("開始清理資料庫，僅保留最近 %.1f 年的資料...", years)
-    cutoff_date = (date.today() - timedelta(days=int(365 * years))).strftime("%Y-%m-%d")
-    logging.info("截止日期：%s (在此日期之前的資料將被刪除)", cutoff_date)
-    try:
-        with sqlite3.connect(db_path) as conn:
-            cur = conn.cursor()
-            cur.execute("DELETE FROM stock_prices WHERE 日期 < ?", (cutoff_date,))
-            deleted_rows = cur.rowcount
-            logging.info("已刪除 %d 筆舊資料。", deleted_rows)
-            conn.commit()
-            
-        # 執行 VACUUM 必須在交易外部（autocommit 模式）
-        with sqlite3.connect(db_path, isolation_level=None) as conn:
-            logging.info("執行資料庫壓縮 (VACUUM)...")
-            conn.execute("VACUUM")
-            
-        logging.info("資料庫清理與壓縮完成。")
-    except Exception as exc:
-        logging.error("清理資料庫時發生錯誤：%s", exc)
-
 def run(args) -> None:
     setup_logging(args.log_level, Path(args.data_dir))
     session = make_session(max_retries=args.max_retries, backoff=0.6, timeout=12, verify=not args.no_verify)
 
     data_dir = Path(args.data_dir)
     db_path = Path(args.db_path) if args.db_path else DEFAULT_DB_PATH
-    init_db(db_path)
+    db = DatabaseManager(db_path)
+    db.init_database()
 
     start, end, target_trade_days = daterange_by_args(args)
     all_days = build_trading_days(session, start, end, data_dir, refresh_calendar=args.refresh_calendar)
@@ -532,20 +451,19 @@ def run(args) -> None:
                 break
             time.sleep(args.sleep)
 
-            # 以批量大小寫入，避免記憶體暴衝
             if len(collected_rows) >= args.batch_size:
-                inserted = bulk_upsert(db_path, collected_rows)
+                inserted = db.bulk_upsert(collected_rows)
                 total_inserted += inserted
                 logging.info("批次入庫 %d 筆（總計 %d）", inserted, total_inserted)
                 collected_rows.clear()
     finally:
         if collected_rows:
-            inserted = bulk_upsert(db_path, collected_rows)
+            inserted = db.bulk_upsert(collected_rows)
             total_inserted += inserted
             logging.info("收尾入庫 %d 筆（總計 %d）", inserted, total_inserted)
 
     if args.prune_years:
-        prune_database(db_path, args.prune_years)
+        db.prune_old_data(args.prune_years)
 
     logging.info("完成。DB 路徑：%s；資料夾：%s", db_path.resolve(), data_dir.resolve())
     try:

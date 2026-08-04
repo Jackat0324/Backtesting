@@ -9,8 +9,8 @@ except ImportError:
         def showwarning(self, *args, **kwargs): print("TK Warning:", args)
     messagebox = MockMessagebox()
 
-import sqlite3
 import pandas as pd
+from db_manager import DatabaseManager
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.dates import DateFormatter, WeekdayLocator, MONDAY
@@ -106,6 +106,7 @@ class ChartCursor:
 class StockPlotter:
     def __init__(self, db_path=None):
         self.db_path = Path(db_path) if db_path else DEFAULT_DB_PATH
+        self.db = DatabaseManager(self.db_path)
 
     def get_stock_data(self, code, center_date=None, total_days=150, frequency='D'):
         """
@@ -120,37 +121,22 @@ class StockPlotter:
         # 調整抓取範圍: 週線需要更多日資料來合成
         fetch_days = total_days * 5 if frequency == 'W' else total_days
             
-        with sqlite3.connect(self.db_path) as conn:
-            if center_date:
-                try:
-                    c_dt = pd.to_datetime(center_date)
-                    # 週線抓更長的前後範圍 (MA60 需要至少 420 天，抓 1200 天確保足夠)
-                    pre_days = 1200 if frequency == 'W' else 120
-                    post_days = 200 if frequency == 'W' else 60
-                    
-                    start_dt = c_dt - pd.Timedelta(days=pre_days)
-                    end_dt = c_dt + pd.Timedelta(days=post_days)
-                    
-                    query = """
-                    SELECT 日期, 開盤, 最高, 最低, 收盤
-                    FROM stock_prices
-                    WHERE 代號 = ? AND 日期 >= ? AND 日期 <= ?
-                    ORDER BY 日期 ASC
-                    """
-                    df = pd.read_sql(query, conn, params=(code, start_dt.strftime("%Y-%m-%d"), end_dt.strftime("%Y-%m-%d")))
-                except Exception as e:
-                    print(f"Date parsing error: {e}")
-                    return None
-            else:
-                query = """
-                SELECT 日期, 開盤, 最高, 最低, 收盤
-                FROM stock_prices
-                WHERE 代號 = ?
-                ORDER BY 日期 DESC
-                LIMIT ?
-                """
-                # LIMIT 限制筆數，週線合成需要多取
-                df = pd.read_sql(query, conn, params=(code, fetch_days))
+        if center_date:
+            try:
+                c_dt = pd.to_datetime(center_date)
+                # 週線抓更長的前後範圍 (MA60 需要至少 420 天，抓 1200 天確保足夠)
+                pre_days = 1200 if frequency == 'W' else 120
+                post_days = 200 if frequency == 'W' else 60
+                
+                start_dt = c_dt - pd.Timedelta(days=pre_days)
+                end_dt = c_dt + pd.Timedelta(days=post_days)
+                
+                df = self.db.fetch_stock_history(code, start_date=start_dt.strftime("%Y-%m-%d"), end_date=end_dt.strftime("%Y-%m-%d"))
+            except Exception as e:
+                print(f"Date parsing error: {e}")
+                return None
+        else:
+            df = self.db.fetch_stock_history(code, limit=fetch_days)
             
         if df.empty:
             return None
