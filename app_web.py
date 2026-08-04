@@ -109,20 +109,57 @@ def render_chart_streamlit(code, name, signal_date, frequency, db_path, strategy
         plt.close(fig) # 重要：釋放記憶體
     except Exception as e:
         st.error(f"渲染圖表時發生錯誤: {e}")
-def get_latest_date(db_path):
+def get_latest_date_and_time(db_path):
     try:
         with sqlite3.connect(db_path) as conn:
-            df_info = pd.read_sql("SELECT MAX(日期) as end FROM stock_prices", conn)
-            return df_info['end'][0]
+            df_info = pd.read_sql(
+                "SELECT 日期, 下載時間 FROM stock_prices WHERE 日期 = (SELECT MAX(日期) FROM stock_prices) LIMIT 1",
+                conn
+            )
+            if df_info.empty:
+                return "未知", "未知"
+            latest_date = df_info['日期'][0]
+            download_time_str = df_info['下載時間'][0]
+            
+            try:
+                dt = datetime.strptime(download_time_str, "%Y-%m-%d %H:%M:%S")
+                is_utc = False
+                try:
+                    import subprocess
+                    import os
+                    cwd = os.path.dirname(db_path)
+                    author = subprocess.check_output(
+                        ["git", "log", "-n", "1", "--format=%an"],
+                        cwd=cwd,
+                        text=True,
+                        stderr=subprocess.DEVNULL
+                    ).strip()
+                    if "Action" in author:
+                        is_utc = True
+                except Exception:
+                    is_utc = dt.hour < 13
+                
+                if is_utc:
+                    dt = dt + timedelta(hours=8)
+                
+                period = "上午" if dt.hour < 12 else "下午"
+                h = dt.hour if dt.hour <= 12 else dt.hour - 12
+                if h == 0:
+                    h = 12
+                time_str = f"台北時間 {period} {h}:{dt.minute:02d}"
+            except Exception:
+                time_str = download_time_str
+                
+            return latest_date, time_str
     except Exception:
-        return "無法讀取"
+        return "無法讀取", "無法讀取"
 
 def main():
     st.title("🚀 TWSE 策略回測雲端儀表板")
     bt = get_backtester()
-    latest_date = get_latest_date(bt.db_path)
+    latest_date, update_time = get_latest_date_and_time(bt.db_path)
     
-    st.info(f"這是一個基於 Streamlit 的網頁介面，展示您的策略回測結果與即時線圖。 (最後資料日期: **{latest_date}**)")
+    st.info(f"這是一個基於 Streamlit 的網頁介面，展示您的策略回測結果與即時線圖。 (最後資料日期: **{latest_date}**，更新時間: **{update_time}**)")
 
     # --- Sidebar ---
     st.sidebar.header("⚙️ 掃描設定")
