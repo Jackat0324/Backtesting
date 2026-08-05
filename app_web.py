@@ -191,13 +191,36 @@ from pathlib import Path
 
 def check_and_download_db(db_path):
     db_path = Path(db_path)
-    if not db_path.exists():
+    url = "https://github.com/Jackat0324/Backtesting/releases/download/database-storage/twse_data.db"
+    
+    now = datetime.now()
+    if 'last_db_check' not in st.session_state:
+        st.session_state.last_db_check = None
+        
+    need_download = not db_path.exists()
+    
+    # 僅在檔案存在且距離上次檢查超過 10 分鐘時才向 GitHub 發送 HEAD 請求，避免影響頁面交互流暢度
+    if db_path.exists() and (st.session_state.last_db_check is None or (now - st.session_state.last_db_check).total_seconds() > 600):
+        st.session_state.last_db_check = now
+        try:
+            req = urllib.request.Request(url, method='HEAD')
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                remote_size = int(resp.info().get('Content-Length', 0))
+            local_size = db_path.stat().st_size
+            if local_size != remote_size:
+                need_download = True
+                logging.info(f"偵測到雲端資料庫大小變更 (本地: {local_size}，雲端: {remote_size})，準備更新...")
+        except Exception as e:
+            logging.warning(f"檢查資料庫更新時發生異常: {e}")
+            
+    if need_download:
         db_path.parent.mkdir(parents=True, exist_ok=True)
-        url = "https://github.com/Jackat0324/Backtesting/releases/download/database-storage/twse_data.db"
-        with st.spinner("首次載入：正在從 GitHub 下載最新股票資料庫 (約 35MB)..."):
+        with st.spinner("正在下載/更新最新股票資料庫 (約 35MB)..."):
             try:
                 urllib.request.urlretrieve(url, db_path)
-                st.success("資料庫下載完成！")
+                st.success("資料庫下載/更新完成！")
+                st.session_state.last_db_check = now
+                st.rerun()
             except Exception as e:
                 st.error(f"資料庫下載失敗: {e}")
 
