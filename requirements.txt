@@ -4,3 +4,4 @@ numpy
 matplotlib
 openpyxl
 requests
+starlette<1.0.0
