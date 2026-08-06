@@ -100,7 +100,12 @@ DAILY_STRATEGIES = [
     '1-1toA+1toB4_chg_小_小_小_小_Daily',
     '1-1toAtoB4_chg_小_小_小_大_Daily',
     '7-8to9toB1_chg_大_大_大_小_Daily',
-    '10to1-1toB4_chg_小_小_小_大_Daily'
+    '10to1-1toB4_chg_小_小_小_大_Daily',
+    '10toB1toB_chg_小_小_小_大_Daily',
+    'B4toB4to2-3_chg_大_小_大_大_Daily',
+    'B4toB4to2-3_chg_小_小_小_小_Daily',
+    'B4toB4to2-3_chg_大_同_大_大_Daily',
+    'B4toB4to2-3_chg_小_小_大_小_Daily'
 ]
 
 DAILY_STRATEGIES_RANKS = [
@@ -243,7 +248,12 @@ WEEKLY_STRATEGIES = [
     '1-1toA+1toB4_chg_小_小_小_小',
     '1-1toAtoB4_chg_小_小_小_大',
     '7-8to9toB1_chg_大_大_大_小',
-    '10to1-1toB4_chg_小_小_小_大'
+    '10to1-1toB4_chg_小_小_小_大',
+    '10toB1toB_chg_小_小_小_大',
+    'B4toB4to2-3_chg_大_小_大_大',
+    'B4toB4to2-3_chg_小_小_小_小',
+    'B4toB4to2-3_chg_大_同_大_大',
+    'B4toB4to2-3_chg_小_小_大_小'
 ]
 
 WEEKLY_STRATEGIES_RANKS = [
@@ -555,6 +565,20 @@ STRATEGY_MAP = {
     '1-1toAtoB4_chg_小_小_小_大': MultiSequenceChangeStrategy(['1-1', 'A', 'B4'], ['小', '小', '小', '大']),
     '7-8to9toB1_chg_大_大_大_小': MultiSequenceChangeStrategy(['7-8', '9', 'B1'], ['大', '大', '大', '小']),
     '10to1-1toB4_chg_小_小_小_大': MultiSequenceChangeStrategy(['10', '1-1', 'B4'], ['小', '小', '小', '大']),
+
+    # 5 New Slope Change Strategies (Daily) - Batch 3
+    '10toB1toB_chg_小_小_小_大_Daily': MultiSequenceChangeStrategy(['10', 'B1', 'B'], ['小', '小', '小', '大']),
+    'B4toB4to2-3_chg_大_小_大_大_Daily': MultiSequenceChangeStrategy(['B4', 'B4', '2-3'], ['大', '小', '大', '大']),
+    'B4toB4to2-3_chg_小_小_小_小_Daily': MultiSequenceChangeStrategy(['B4', 'B4', '2-3'], ['小', '小', '小', '小']),
+    'B4toB4to2-3_chg_大_同_大_大_Daily': MultiSequenceChangeStrategy(['B4', 'B4', '2-3'], ['大', '同', '大', '大']),
+    'B4toB4to2-3_chg_小_小_大_小_Daily': MultiSequenceChangeStrategy(['B4', 'B4', '2-3'], ['小', '小', '大', '小']),
+
+    # 5 New Slope Change Strategies (Weekly) - Batch 3
+    '10toB1toB_chg_小_小_小_大': MultiSequenceChangeStrategy(['10', 'B1', 'B'], ['小', '小', '小', '大']),
+    'B4toB4to2-3_chg_大_小_大_大': MultiSequenceChangeStrategy(['B4', 'B4', '2-3'], ['大', '小', '大', '大']),
+    'B4toB4to2-3_chg_小_小_小_小': MultiSequenceChangeStrategy(['B4', 'B4', '2-3'], ['小', '小', '小', '小']),
+    'B4toB4to2-3_chg_大_同_大_大': MultiSequenceChangeStrategy(['B4', 'B4', '2-3'], ['大', '同', '大', '大']),
+    'B4toB4to2-3_chg_小_小_大_小': MultiSequenceChangeStrategy(['B4', 'B4', '2-3'], ['小', '小', '大', '小']),
 }
 
 def get_strategy(name: str) -> BaseStrategy:
