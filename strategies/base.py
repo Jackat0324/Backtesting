@@ -189,3 +189,29 @@ class MultiSequenceRanksStrategy_by5M_1(MultiSequenceRanksStrategy):
         ma5_condition = dec_1 & dec_2 & dec_3 & not_dec
         
         return combined_condition & ma5_condition.fillna(False)
+
+class MultiSequenceChangeStrategy(MultiSequenceStrategy):
+    def __init__(self, sequences: list, changes: list):
+        # sequences: e.g. ['7-5', '7-5', '1']
+        # changes: e.g. ['小', '小', '小', '小'] corresponding to [MA5, MA10, MA20, MA60] today vs yesterday
+        super().__init__(sequences[::-1])
+        self.changes = changes
+
+    def calculate_signals(self, df: pd.DataFrame) -> pd.Series:
+        # 1. Base sequence conditions
+        combined_condition = super().calculate_signals(df)
+        
+        # 2. Check MA change conditions (today vs yesterday)
+        ma_names = ['MA5', 'MA10', 'MA20', 'MA60']
+        for ma_name, change in zip(ma_names, self.changes):
+            if change == '大':
+                cond = df[ma_name] > df[ma_name].shift(1)
+            elif change == '小':
+                cond = df[ma_name] < df[ma_name].shift(1)
+            elif change == '同':
+                cond = (df[ma_name].round(2) == df[ma_name].shift(1).round(2))
+            else:
+                continue
+            combined_condition = combined_condition & cond.fillna(False)
+            
+        return combined_condition

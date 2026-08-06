@@ -2,7 +2,8 @@ from .shortcuts import SEQUENCE_SHORTCUTS, REVERSE_SHORTCUTS
 from .base import (
     BaseStrategy, FlatMAStrategy, EqMA2DaysStrategy, CrossMAStrategy,
     MultiSequenceStrategy, WeeklySequenceStrategy, ThreeWeekSequenceStrategy,
-    MultiSequenceRanksStrategy, MultiSequenceRanksStrategy_by5M_1
+    MultiSequenceRanksStrategy, MultiSequenceRanksStrategy_by5M_1,
+    MultiSequenceChangeStrategy
 )
 from .strategy_list import (
     STRATEGY_MAP, DAILY_STRATEGIES, WEEKLY_STRATEGIES,

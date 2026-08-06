@@ -1,5 +1,6 @@
 from .base import (
-    BaseStrategy, MultiSequenceStrategy, MultiSequenceRanksStrategy, MultiSequenceRanksStrategy_by5M_1
+    BaseStrategy, MultiSequenceStrategy, MultiSequenceRanksStrategy, MultiSequenceRanksStrategy_by5M_1,
+    MultiSequenceChangeStrategy
 )
 
 # --- Strategy Lists for GUI ---
@@ -51,7 +52,31 @@ DAILY_STRATEGIES = [
     '3to3to7-8_Daily',
     'B4toB4to2-3_Daily',
     '7-7to7-7to7-7_Daily',
-    '7-7to7-7to7-8_Daily'
+    '7-7to7-7to7-8_Daily',
+    '7-5to7-5to1_chg_小_小_小_小_Daily',
+    '7-5to7-5to1_chg_小_小_大_小_Daily',
+    '1to1to2_chg_大_大_大_大_Daily',
+    '1to1to2_chg_大_大_小_小_Daily',
+    '1to1to2_chg_大_同_同_小_Daily',
+    '1to2to3_chg_大_大_小_小_Daily',
+    '1to2to7-3_chg_大_大_大_大_Daily',
+    '2to2to3_chg_大_大_大_大_Daily',
+    '2to2to3_chg_大_大_同_大_Daily',
+    '2to2to3_chg_大_大_大_小_Daily',
+    '2to2to7-3_chg_大_大_大_大_Daily',
+    '2to2to3_chg_大_大_小_小_Daily',
+    '9to3-1to7-5_chg_小_小_小_小_Daily',
+    '1to2to3_chg_大_大_大_大_Daily',
+    '2-3to2-3toA_chg_大_大_大_大_Daily',
+    '1-1toA+1to2-1_chg_小_小_大_大_Daily',
+    '2-1to2-1to7-1_chg_大_大_大_大_Daily',
+    '2-1to7-1to7-9_chg_大_大_大_大_Daily',
+    'A+1to2-1to2-1_chg_大_小_大_大_Daily',
+    '2-1to2-1to7-9_chg_大_大_大_大_Daily',
+    '2-1to7-1to7-9_chg_大_大_小_大_Daily',
+    '2-3to2-3toA_chg_小_小_小_大_Daily',
+    '2-3to2-3toA_chg_小_小_大_大_Daily',
+    '2-3to2-3toA_chg_大_小_小_大_Daily'
 ]
 
 DAILY_STRATEGIES_RANKS = [
@@ -146,7 +171,31 @@ WEEKLY_STRATEGIES = [
     '3to3to7-8',
     'B4toB4to2-3',
     '7-7to7-7to7-7',
-    '7-7to7-7to7-8'
+    '7-7to7-7to7-8',
+    '7-5to7-5to1_chg_小_小_小_小',
+    '7-5to7-5to1_chg_小_小_大_小',
+    '1to1to2_chg_大_大_大_大',
+    '1to1to2_chg_大_大_小_小',
+    '1to1to2_chg_大_同_同_小',
+    '1to2to3_chg_大_大_小_小',
+    '1to2to7-3_chg_大_大_大_大',
+    '2to2to3_chg_大_大_大_大',
+    '2to2to3_chg_大_大_同_大',
+    '2to2to3_chg_大_大_大_小',
+    '2to2to7-3_chg_大_大_大_大',
+    '2to2to3_chg_大_大_小_小',
+    '9to3-1to7-5_chg_小_小_小_小',
+    '1to2to3_chg_大_大_大_大',
+    '2-3to2-3toA_chg_大_大_大_大',
+    '1-1toA+1to2-1_chg_小_小_大_大',
+    '2-1to2-1to7-1_chg_大_大_大_大',
+    '2-1to7-1to7-9_chg_大_大_大_大',
+    'A+1to2-1to2-1_chg_大_小_大_大',
+    '2-1to2-1to7-9_chg_大_大_大_大',
+    '2-1to7-1to7-9_chg_大_大_小_大',
+    '2-3to2-3toA_chg_小_小_小_大',
+    '2-3to2-3toA_chg_小_小_大_大',
+    '2-3to2-3toA_chg_大_小_小_大'
 ]
 
 WEEKLY_STRATEGIES_RANKS = [
@@ -354,6 +403,58 @@ STRATEGY_MAP = {
     '7-5to7-5to1to1to1_by5M_1_Daily': MultiSequenceRanksStrategy_by5M_1(['7-5', '7-5', '1', '1', '1']),
     'AtoAtoAto1to1_by5M_1_Daily': MultiSequenceRanksStrategy_by5M_1(['A', 'A', 'A', '1', '1']),
     'Bto1to1to1to1_by5M_1_Daily': MultiSequenceRanksStrategy_by5M_1(['B', '1', '1', '1', '1']),
+    
+    # 24 New Slope Change Strategies (Daily)
+    '7-5to7-5to1_chg_小_小_小_小_Daily': MultiSequenceChangeStrategy(['7-5', '7-5', '1'], ['小', '小', '小', '小']),
+    '7-5to7-5to1_chg_小_小_大_小_Daily': MultiSequenceChangeStrategy(['7-5', '7-5', '1'], ['小', '小', '大', '小']),
+    '1to1to2_chg_大_大_大_大_Daily': MultiSequenceChangeStrategy(['1', '1', '2'], ['大', '大', '大', '大']),
+    '1to1to2_chg_大_大_小_小_Daily': MultiSequenceChangeStrategy(['1', '1', '2'], ['大', '大', '小', '小']),
+    '1to1to2_chg_大_同_同_小_Daily': MultiSequenceChangeStrategy(['1', '1', '2'], ['大', '同', '同', '小']),
+    '1to2to3_chg_大_大_小_小_Daily': MultiSequenceChangeStrategy(['1', '2', '3'], ['大', '大', '小', '小']),
+    '1to2to7-3_chg_大_大_大_大_Daily': MultiSequenceChangeStrategy(['1', '2', '7-3'], ['大', '大', '大', '大']),
+    '2to2to3_chg_大_大_大_大_Daily': MultiSequenceChangeStrategy(['2', '2', '3'], ['大', '大', '大', '大']),
+    '2to2to3_chg_大_大_同_大_Daily': MultiSequenceChangeStrategy(['2', '2', '3'], ['大', '大', '同', '大']),
+    '2to2to3_chg_大_大_大_小_Daily': MultiSequenceChangeStrategy(['2', '2', '3'], ['大', '大', '大', '小']),
+    '2to2to7-3_chg_大_大_大_大_Daily': MultiSequenceChangeStrategy(['2', '2', '7-3'], ['大', '大', '大', '大']),
+    '2to2to3_chg_大_大_小_小_Daily': MultiSequenceChangeStrategy(['2', '2', '3'], ['大', '大', '小', '小']),
+    '9to3-1to7-5_chg_小_小_小_小_Daily': MultiSequenceChangeStrategy(['9', '3-1', '7-5'], ['小', '小', '小', '小']),
+    '1to2to3_chg_大_大_大_大_Daily': MultiSequenceChangeStrategy(['1', '2', '3'], ['大', '大', '大', '大']),
+    '2-3to2-3toA_chg_大_大_大_大_Daily': MultiSequenceChangeStrategy(['2-3', '2-3', 'A'], ['大', '大', '大', '大']),
+    '1-1toA+1to2-1_chg_小_小_大_大_Daily': MultiSequenceChangeStrategy(['1-1', 'A+1', '2-1'], ['小', '小', '大', '大']),
+    '2-1to2-1to7-1_chg_大_大_大_大_Daily': MultiSequenceChangeStrategy(['2-1', '2-1', '7-1'], ['大', '大', '大', '大']),
+    '2-1to7-1to7-9_chg_大_大_大_大_Daily': MultiSequenceChangeStrategy(['2-1', '7-1', '7-9'], ['大', '大', '大', '大']),
+    'A+1to2-1to2-1_chg_大_小_大_大_Daily': MultiSequenceChangeStrategy(['A+1', '2-1', '2-1'], ['大', '小', '大', '大']),
+    '2-1to2-1to7-9_chg_大_大_大_大_Daily': MultiSequenceChangeStrategy(['2-1', '2-1', '7-9'], ['大', '大', '大', '大']),
+    '2-1to7-1to7-9_chg_大_大_小_大_Daily': MultiSequenceChangeStrategy(['2-1', '7-1', '7-9'], ['大', '大', '小', '大']),
+    '2-3to2-3toA_chg_小_小_小_大_Daily': MultiSequenceChangeStrategy(['2-3', '2-3', 'A'], ['小', '小', '小', '大']),
+    '2-3to2-3toA_chg_小_小_大_大_Daily': MultiSequenceChangeStrategy(['2-3', '2-3', 'A'], ['小', '小', '大', '大']),
+    '2-3to2-3toA_chg_大_小_小_大_Daily': MultiSequenceChangeStrategy(['2-3', '2-3', 'A'], ['大', '小', '小', '大']),
+
+    # 24 New Slope Change Strategies (Weekly)
+    '7-5to7-5to1_chg_小_小_小_小': MultiSequenceChangeStrategy(['7-5', '7-5', '1'], ['小', '小', '小', '小']),
+    '7-5to7-5to1_chg_小_小_大_小': MultiSequenceChangeStrategy(['7-5', '7-5', '1'], ['小', '小', '大', '小']),
+    '1to1to2_chg_大_大_大_大': MultiSequenceChangeStrategy(['1', '1', '2'], ['大', '大', '大', '大']),
+    '1to1to2_chg_大_大_小_小': MultiSequenceChangeStrategy(['1', '1', '2'], ['大', '大', '小', '小']),
+    '1to1to2_chg_大_同_同_小': MultiSequenceChangeStrategy(['1', '1', '2'], ['大', '同', '同', '小']),
+    '1to2to3_chg_大_大_小_小': MultiSequenceChangeStrategy(['1', '2', '3'], ['大', '大', '小', '小']),
+    '1to2to7-3_chg_大_大_大_大': MultiSequenceChangeStrategy(['1', '2', '7-3'], ['大', '大', '大', '大']),
+    '2to2to3_chg_大_大_大_大': MultiSequenceChangeStrategy(['2', '2', '3'], ['大', '大', '大', '大']),
+    '2to2to3_chg_大_大_同_大': MultiSequenceChangeStrategy(['2', '2', '3'], ['大', '大', '同', '大']),
+    '2to2to3_chg_大_大_大_小': MultiSequenceChangeStrategy(['2', '2', '3'], ['大', '大', '大', '小']),
+    '2to2to7-3_chg_大_大_大_大': MultiSequenceChangeStrategy(['2', '2', '7-3'], ['大', '大', '大', '大']),
+    '2to2to3_chg_大_大_小_小': MultiSequenceChangeStrategy(['2', '2', '3'], ['大', '大', '小', '小']),
+    '9to3-1to7-5_chg_小_小_小_小': MultiSequenceChangeStrategy(['9', '3-1', '7-5'], ['小', '小', '小', '小']),
+    '1to2to3_chg_大_大_大_大': MultiSequenceChangeStrategy(['1', '2', '3'], ['大', '大', '大', '大']),
+    '2-3to2-3toA_chg_大_大_大_大': MultiSequenceChangeStrategy(['2-3', '2-3', 'A'], ['大', '大', '大', '大']),
+    '1-1toA+1to2-1_chg_小_小_大_大': MultiSequenceChangeStrategy(['1-1', 'A+1', '2-1'], ['小', '小', '大', '大']),
+    '2-1to2-1to7-1_chg_大_大_大_大': MultiSequenceChangeStrategy(['2-1', '2-1', '7-1'], ['大', '大', '大', '大']),
+    '2-1to7-1to7-9_chg_大_大_大_大': MultiSequenceChangeStrategy(['2-1', '7-1', '7-9'], ['大', '大', '大', '大']),
+    'A+1to2-1to2-1_chg_大_小_大_大': MultiSequenceChangeStrategy(['A+1', '2-1', '2-1'], ['大', '小', '大', '大']),
+    '2-1to2-1to7-9_chg_大_大_大_大': MultiSequenceChangeStrategy(['2-1', '2-1', '7-9'], ['大', '大', '大', '大']),
+    '2-1to7-1to7-9_chg_大_大_小_大': MultiSequenceChangeStrategy(['2-1', '7-1', '7-9'], ['大', '大', '小', '大']),
+    '2-3to2-3toA_chg_小_小_小_大': MultiSequenceChangeStrategy(['2-3', '2-3', 'A'], ['小', '小', '小', '大']),
+    '2-3to2-3toA_chg_小_小_大_大': MultiSequenceChangeStrategy(['2-3', '2-3', 'A'], ['小', '小', '大', '大']),
+    '2-3to2-3toA_chg_大_小_小_大': MultiSequenceChangeStrategy(['2-3', '2-3', 'A'], ['大', '小', '小', '大']),
 }
 
 def get_strategy(name: str) -> BaseStrategy:
