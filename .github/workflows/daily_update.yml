@@ -39,7 +39,7 @@ jobs:
       - name: Run data reader
         run: |
           mkdir -p data
-          python reader.py --days 15 --no-verify --halt-on-fail 100 --prune-years 2
+          python reader.py --days 500 --no-verify --halt-on-fail 100 --prune-years 2
 
       - name: Upload Database to Release
         env:
