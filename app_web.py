@@ -372,14 +372,34 @@ def main():
             total_signals = len(df_res)
             total_pages = (total_signals + batch_size - 1) // batch_size
             
-            # 分頁按鈕
-            col_p1, col_p2, col_p3 = st.columns([1, 1, 4])
-            if col_p1.button("⬅️ 上一頁", disabled=(st.session_state.current_page <= 1)):
-                st.session_state.current_page -= 1
-                st.rerun()
-            if col_p2.button("下一頁 ➡️", disabled=(st.session_state.current_page >= total_pages)):
-                st.session_state.current_page += 1
-                st.rerun()
+            # 建立個股選擇清單，以供下拉搜尋與直接跳轉
+            stock_options = [
+                f"{i+1}. {row['代號']} {row['名稱']} (策略: {row['策略']})"
+                for i, row in df_res.iterrows()
+            ]
+            
+            # 使用分欄：左邊下拉選單搜尋，右邊上一頁/下一頁按鈕
+            col_sel, col_btns = st.columns([3, 2])
+            
+            with col_sel:
+                selected_stock = st.selectbox(
+                    "🎯 選擇個股或輸入代號搜尋",
+                    options=stock_options,
+                    index=st.session_state.current_page - 1,
+                    key="stock_select_box"
+                )
+                selected_idx = stock_options.index(selected_stock)
+                st.session_state.current_page = selected_idx + 1
+                
+            with col_btns:
+                st.write("")  # 垂直微調對齊
+                col_p1, col_p2 = st.columns(2)
+                if col_p1.button("⬅️ 上一頁", disabled=(st.session_state.current_page <= 1), use_container_width=True):
+                    st.session_state.current_page -= 1
+                    st.rerun()
+                if col_p2.button("下一頁 ➡️", disabled=(st.session_state.current_page >= total_pages), use_container_width=True):
+                    st.session_state.current_page += 1
+                    st.rerun()
             
             page = st.session_state.current_page
             start_idx = (page - 1) * batch_size
