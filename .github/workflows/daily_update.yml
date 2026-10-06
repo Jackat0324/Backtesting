@@ -2,9 +2,9 @@ name: Daily Data Update
 
 on:
   schedule:
-    # 每個工作日 (週一至週五) 的下午 1:45 (CST) 執行
-    # UTC 5:45 = CST 13:45
-    - cron: '45 5 * * 1-5'
+    # 每個工作日 (週一至週五) 的下午 1:30 (CST) 執行
+    # UTC 5:30 = CST 13:30
+    - cron: '30 5 * * 1-5'
   workflow_dispatch: # 允許手動觸發
 
 permissions:
