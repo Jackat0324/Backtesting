@@ -761,6 +761,20 @@ class WeeklyRanksStrategyFrame(WeeklyStrategyFrame):
             self.strategy_listbox.insert(tk.END, s)
         self.strategy_listbox.select_set(0)
 
+class WeeklyKBarStrategyFrame(WeeklyStrategyFrame):
+    """
+    繼承 WeeklyStrategyFrame 但使用週K(當日K)策略列表
+    """
+    def __init__(self, parent):
+        super().__init__(parent)
+        
+        # 更新策略列表為週K(當日K)策略
+        self.strategy_listbox.delete(0, tk.END)
+        strategies_list = strategies.WEEKLY_STRATEGIES_KBAR
+        for s in strategies_list:
+            self.strategy_listbox.insert(tk.END, s)
+        self.strategy_listbox.select_set(0)
+
 class DailyRanksStrategyFrame(StrategyFrame):
     """
     繼承 StrategyFrame 但使用位階策略列表 (日K)
@@ -834,6 +848,10 @@ class TWSEApp:
         # Tab 5: 策略回測 (週位階)
         self.tab_ranks = WeeklyRanksStrategyFrame(self.notebook)
         self.notebook.add(self.tab_ranks, text="策略回測 (週K位階)")
+
+        # Tab 6: 策略回測 (週K(當日K))
+        self.tab_weekly_kbar = WeeklyKBarStrategyFrame(self.notebook)
+        self.notebook.add(self.tab_weekly_kbar, text="策略回測 (週K(當日K))")
 
 
 

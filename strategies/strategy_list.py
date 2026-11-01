@@ -1,6 +1,6 @@
 from .base import (
     BaseStrategy, MultiSequenceStrategy, MultiSequenceRanksStrategy, MultiSequenceRanksStrategy_by5M_1,
-    MultiSequenceChangeStrategy
+    MultiSequenceChangeStrategy, WeeklyKBarStrategy, parse_weekly_kbar_strategy
 )
 
 # --- Strategy Lists for GUI ---
@@ -221,6 +221,10 @@ WEEKLY_STRATEGIES_RANKS = [
     '7-5to7-5to1to1to1_by5M_1',
     'AtoAtoAto1to1_by5M_1',
     'Bto1to1to1to1_by5M_1'
+]
+
+WEEKLY_STRATEGIES_KBAR = [
+    '1,2,3_大大大同_60>收>5>開>20>10',
 ]
 
 # --- Strategy Factory / Registry ---
@@ -517,5 +521,19 @@ STRATEGY_MAP = {
     'B4toB4to2-3_chg_小_小_大_小': MultiSequenceChangeStrategy(['B4', 'B4', '2-3'], ['小', '小', '大', '小']),
 }
 
+# 自動註冊 WEEKLY_STRATEGIES_KBAR 中的策略
+for _kbar_strat_name in WEEKLY_STRATEGIES_KBAR:
+    _parsed = parse_weekly_kbar_strategy(_kbar_strat_name)
+    if _parsed is not None:
+        STRATEGY_MAP[_kbar_strat_name] = _parsed
+
 def get_strategy(name: str) -> BaseStrategy:
-    return STRATEGY_MAP.get(name)
+    strat = STRATEGY_MAP.get(name)
+    if strat is not None:
+        return strat
+    # 動態解析符合「週K(當日K)」格式的策略名稱並快取
+    parsed = parse_weekly_kbar_strategy(name)
+    if parsed is not None:
+        STRATEGY_MAP[name] = parsed
+        return parsed
+    return None

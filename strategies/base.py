@@ -215,3 +215,111 @@ class MultiSequenceChangeStrategy(MultiSequenceStrategy):
             combined_condition = combined_condition & cond.fillna(False)
             
         return combined_condition
+
+
+class WeeklyKBarStrategy(MultiSequenceChangeStrategy):
+    """
+    週K(當日K) 策略：
+    1. 包含均線位階序列變化 (如 1,2,3 代表 1to2to3)
+    2. 包含各週均線 (MA5, MA10, MA20, MA60) 與前一週比較之變化 (如 大大大同)
+    3. 包含週K棒開盤價(開)、收盤價(收)與各週均線(5, 10, 20, 60)之位置關係 (如 60>收>5>開>20>10)
+    """
+    TOKEN_MAP = {
+        '5': 'MA5', 'MA5': 'MA5',
+        '10': 'MA10', 'MA10': 'MA10',
+        '20': 'MA20', 'MA20': 'MA20',
+        '60': 'MA60', 'MA60': 'MA60',
+        '開': '開盤', '開盤': '開盤',
+        '收': '收盤', '收盤': '收盤',
+        '高': '最高', '最高': '最高',
+        '低': '最低', '最低': '最低',
+    }
+
+    def __init__(self, sequences: list, changes: list, kbar_expr: str):
+        super().__init__(sequences, changes)
+        self.kbar_expr = kbar_expr.strip()
+
+    def _get_series(self, df: pd.DataFrame, token: str) -> pd.Series:
+        col = self.TOKEN_MAP.get(token.strip())
+        if not col or col not in df.columns:
+            raise ValueError(f"未知的欄位代號: {token}")
+        return df[col]
+
+    def calculate_signals(self, df: pd.DataFrame) -> pd.Series:
+        combined_condition = super().calculate_signals(df)
+
+        if not self.kbar_expr:
+            return combined_condition
+
+        # 支援 '>'、'>='、'<'、'<='、'='、'==' 以及 ',' (預設視為 '>')
+        parts = re.split(r'(>=|<=|==|>|<|=|,)', self.kbar_expr)
+        parts = [p.strip() for p in parts if p.strip()]
+
+        # parts 結構應為: [token0, op0, token1, op1, token2, ...]
+        if len(parts) < 3 or len(parts) % 2 == 0:
+            return pd.Series(False, index=df.index)
+
+        try:
+            for i in range(0, len(parts) - 2, 2):
+                left_token = parts[i]
+                op = parts[i + 1]
+                right_token = parts[i + 2]
+
+                left_s = self._get_series(df, left_token)
+                right_s = self._get_series(df, right_token)
+
+                if op in ('>', ','):
+                    cond = left_s > right_s
+                elif op == '>=':
+                    cond = left_s >= right_s
+                elif op == '<':
+                    cond = left_s < right_s
+                elif op == '<=':
+                    cond = left_s <= right_s
+                elif op in ('=', '=='):
+                    cond = left_s.round(2) == right_s.round(2)
+                else:
+                    cond = pd.Series(False, index=df.index)
+
+                combined_condition = combined_condition & cond.fillna(False)
+        except Exception:
+            return pd.Series(False, index=df.index)
+
+        return combined_condition
+
+
+def parse_weekly_kbar_strategy(name: str):
+    """
+    自動解析「週K(當日K)」策略名稱，例如：
+    - '1,2,3_大大大同_60>收>5>開>20>10'
+    - '1,2,3_大_大_大_同_60>收>5>開>20>10'
+    - '1to2to3_大大大同_60,收,5,開,20,10'
+    """
+    parts = [p.strip() for p in name.split('_') if p.strip()]
+    if len(parts) < 3:
+        return None
+
+    seq_part = parts[0]
+    kbar_expr = parts[-1]
+    mid_parts = parts[1:-1]
+
+    # 1. 解析序列 (支援 ',' 或 'to')
+    if ',' in seq_part:
+        sequences = [s.strip() for s in seq_part.split(',') if s.strip()]
+    else:
+        sequences = [s.strip() for s in seq_part.split('to') if s.strip()]
+
+    # 2. 解析均線變化 (支援 '大大大同' 或 '大_大_大_同' 或 '大,大,大,同')
+    if len(mid_parts) == 1:
+        chg_str = mid_parts[0]
+        if ',' in chg_str:
+            changes = [c.strip() for c in chg_str.split(',') if c.strip()]
+        else:
+            changes = list(chg_str)
+    else:
+        changes = mid_parts
+
+    if len(changes) != 4 or not sequences or not kbar_expr:
+        return None
+
+    return WeeklyKBarStrategy(sequences, changes, kbar_expr)
