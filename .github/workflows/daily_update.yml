@@ -1,7 +1,16 @@
 name: Daily Data Update
 
 on:
-  workflow_dispatch: # 由外部定時器 (如 cron-job.org) 準時呼叫 API 觸發，或手動觸發
+  schedule:
+    # 方式 D：多時段冷門分鐘撒網 (避開 :00/:15/:30/:45 全球尖峰，只要任一班次排進即完成當日更新，後續班次自動秒退)
+    - cron: '17 6 * * 1-5'  # 台北時間 14:17
+    - cron: '33 6 * * 1-5'  # 台北時間 14:33
+    - cron: '51 6 * * 1-5'  # 台北時間 14:51
+    - cron: '19 7 * * 1-5'  # 台北時間 15:19
+    - cron: '47 7 * * 1-5'  # 台北時間 15:47
+    - cron: '23 8 * * 1-5'  # 台北時間 16:23
+    - cron: '11 10 * * 1-5' # 台北時間 18:11 (傍晚保底)
+  workflow_dispatch: # 允許手動或外部 API 立即觸發
 
 permissions:
   contents: write
@@ -32,12 +41,57 @@ jobs:
           mkdir -p data
           gh release download database-storage --pattern "twse_data.db" --dir data --clobber || echo "Release not found, skipping download"
 
+      - name: Check if already updated today
+        id: check_db
+        run: |
+          python - << 'EOF'
+          import os
+          from datetime import datetime, timedelta, timezone
+          from db_manager import DatabaseManager
+
+          event_name = os.environ.get("GITHUB_EVENT_NAME", "")
+          tpe_today = datetime.now(timezone(timedelta(hours=8))).strftime("%Y-%m-%d")
+          latest_date = ""
+          if os.path.exists("data/twse_data.db"):
+              d, _ = DatabaseManager("data/twse_data.db").get_latest_data_info()
+              latest_date = d or ""
+
+          print(f"Event: {event_name}, Taipei Today: {tpe_today}, DB Latest: {latest_date}")
+          need_run = "true"
+          if event_name == "schedule" and latest_date >= tpe_today:
+              print("今日收盤資料已存在於資料庫中，略過重複抓取。")
+              need_run = "false"
+
+          with open(os.environ["GITHUB_OUTPUT"], "a") as fh:
+              fh.write(f"need_run={need_run}\n")
+              fh.write(f"before_date={latest_date}\n")
+          EOF
+
       - name: Run data reader
+        id: run_reader
+        if: steps.check_db.outputs.need_run == 'true'
         run: |
           mkdir -p data
           python reader.py --days 15 --no-verify --halt-on-fail 100 --prune-years 2
+          python - << 'EOF'
+          import os
+          from db_manager import DatabaseManager
+
+          event_name = os.environ.get("GITHUB_EVENT_NAME", "")
+          before_date = "${{ steps.check_db.outputs.before_date }}"
+          after_date = ""
+          if os.path.exists("data/twse_data.db"):
+              d, _ = DatabaseManager("data/twse_data.db").get_latest_data_info()
+              after_date = d or ""
+
+          has_new_data = "true" if (event_name == "workflow_dispatch" or after_date > before_date) else "false"
+          print(f"Before date: {before_date}, After date: {after_date}, Has new data: {has_new_data}")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as fh:
+              fh.write(f"has_new_data={has_new_data}\n")
+          EOF
 
       - name: Upload Database to Release
+        if: steps.check_db.outputs.need_run == 'true' && steps.run_reader.outputs.has_new_data == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -45,8 +99,12 @@ jobs:
           gh release upload database-storage data/twse_data.db --clobber
 
       - name: Notify Discord
-        if: env.DISCORD_WEBHOOK != ''
+        if: steps.check_db.outputs.need_run == 'true' && steps.run_reader.outputs.has_new_data == 'true'
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: |
-          python discord_notify.py
+          if [ -n "$DISCORD_WEBHOOK" ]; then
+            python discord_notify.py
+          else
+            echo "DISCORD_WEBHOOK not set, skipping notification."
+          fi

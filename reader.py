@@ -15,7 +15,7 @@ import sqlite3
 import argparse
 import logging
 from logging.handlers import RotatingFileHandler
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import List, Optional, Iterable, Tuple
 from db_manager import DatabaseManager
@@ -362,7 +362,7 @@ def fetch_one_day(session: requests.Session, day: date, data_dir: Path, force: b
 
     df["日期"] = day.strftime("%Y-%m-%d")
     df["資料來源"] = "TWSE"
-    df["下載時間"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    df["下載時間"] = datetime.now(timezone(timedelta(hours=8))).strftime("%Y-%m-%d %H:%M:%S")
 
     df = df[CACHE_COLUMNS]
     df = df.dropna(subset=["收盤"])
@@ -472,6 +472,71 @@ def run(args) -> None:
         print(f"全部完成，總共處理 {total_inserted} 筆資料")
     print(f"DB：{db_path.resolve()}")
     print(f"快取資料夾：{data_dir.resolve()}")
+
+
+def get_taipei_now() -> datetime:
+    """取得台北時間 (UTC+8)，相容雲端 Linux (UTC) 與本地 Windows 環境"""
+    return datetime.now(timezone(timedelta(hours=8))).replace(tzinfo=None)
+
+
+def quick_sync_latest(db_path=None, force_today: bool = False, max_days: int = 5) -> Tuple[int, List[str]]:
+    """
+    快速向證交所補抓資料庫缺少的最新交易日資料（單日僅需 1~2 秒）。
+    回傳 (新增/更新筆數, 成功同步的日期字串清單)
+    """
+    target_db_path = Path(db_path) if db_path else DEFAULT_DB_PATH
+    if not target_db_path.exists():
+        return 0, []
+
+    db = DatabaseManager(target_db_path)
+    latest_date_str, _ = db.get_latest_data_info()
+    if not latest_date_str:
+        return 0, []
+
+    try:
+        latest_dt = datetime.strptime(latest_date_str, "%Y-%m-%d").date()
+    except Exception:
+        return 0, []
+
+    now_tpe = get_taipei_now()
+    today_tpe = now_tpe.date()
+
+    # 台股盤後收盤資料約 14:10~14:20 出爐；若未滿 14:10 且非手動強制，僅補抓至前一日
+    if not force_today and (now_tpe.hour < 14 or (now_tpe.hour == 14 and now_tpe.minute < 10)):
+        end_dt = today_tpe - timedelta(days=1)
+    else:
+        end_dt = today_tpe
+
+    if latest_dt >= end_dt:
+        return 0, []
+
+    candidate_days: List[date] = []
+    cur = latest_dt + timedelta(days=1)
+    while cur <= end_dt:
+        if 1 <= cur.isoweekday() <= 5:
+            candidate_days.append(cur)
+        cur += timedelta(days=1)
+
+    if not candidate_days:
+        return 0, []
+
+    candidate_days = candidate_days[-max_days:]
+    session = make_session(max_retries=2, backoff=0.3, timeout=8, verify=False)
+    data_dir = target_db_path.parent
+
+    total_upserted = 0
+    synced_dates: List[str] = []
+
+    for d in candidate_days:
+        df = fetch_one_day(session, d, data_dir, force=True, cache_format="csv", from_cache_only=False)
+        if df is not None and not df.empty:
+            df["下載時間"] = get_taipei_now().strftime("%Y-%m-%d %H:%M:%S")
+            rows = list(as_rows(df))
+            upserted = db.bulk_upsert(rows)
+            total_upserted += upserted
+            synced_dates.append(d.strftime("%Y-%m-%d"))
+
+    return total_upserted, synced_dates
 
 # ---------------------------
 # CLI

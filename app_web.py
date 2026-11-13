@@ -188,6 +188,7 @@ def get_latest_date_and_time(db_path):
 
 import urllib.request
 from pathlib import Path
+import reader
 
 def check_and_download_db(db_path):
     db_path = Path(db_path)
@@ -196,11 +197,24 @@ def check_and_download_db(db_path):
     now = datetime.now()
     if 'last_db_check' not in st.session_state:
         st.session_state.last_db_check = None
+    if 'last_twse_sync' not in st.session_state:
+        st.session_state.last_twse_sync = None
         
     need_download = not db_path.exists()
     
-    # 僅在檔案存在且距離上次檢查超過 10 分鐘時才向 GitHub 發送 HEAD 請求，避免影響頁面交互流暢度
-    if db_path.exists() and (st.session_state.last_db_check is None or (now - st.session_state.last_db_check).total_seconds() > 600):
+    # 若本地資料庫已包含今日最新資料，則不需被雲端舊檔覆蓋
+    local_has_latest = False
+    if db_path.exists():
+        try:
+            latest_d, _ = DatabaseManager(db_path).get_latest_data_info()
+            tpe_today = reader.get_taipei_now().strftime("%Y-%m-%d")
+            if latest_d and latest_d >= tpe_today:
+                local_has_latest = True
+        except Exception:
+            pass
+
+    # 僅在檔案存在、尚未有今日資料、且距離上次檢查超過 10 分鐘時才向 GitHub 發送 HEAD 請求
+    if db_path.exists() and not local_has_latest and (st.session_state.last_db_check is None or (now - st.session_state.last_db_check).total_seconds() > 600):
         st.session_state.last_db_check = now
         try:
             req = urllib.request.Request(url, method='HEAD')
@@ -220,9 +234,18 @@ def check_and_download_db(db_path):
                 urllib.request.urlretrieve(url, db_path)
                 st.success("資料庫下載/更新完成！")
                 st.session_state.last_db_check = now
-                st.rerun()
             except Exception as e:
                 st.error(f"資料庫下載失敗: {e}")
+
+    # 方式 A：若 GitHub Actions 尚未跑完，自動直接向證交所補抓今日收盤資料 (約 1~2 秒)
+    if db_path.exists() and (st.session_state.last_twse_sync is None or (now - st.session_state.last_twse_sync).total_seconds() > 300):
+        st.session_state.last_twse_sync = now
+        try:
+            upserted, synced_dates = reader.quick_sync_latest(db_path, force_today=False)
+            if synced_dates:
+                st.toast(f"✅ 已即時從證交所同步最新收盤資料 ({', '.join(synced_dates)})！")
+        except Exception as e:
+            logging.warning(f"自動向證交所同步最新資料時發生異常: {e}")
 
 def main():
     st.title("🚀 TWSE 策略回測雲端儀表板")
@@ -289,6 +312,19 @@ def main():
 
     # --- Data Health Check (Sidebar) ---
     st.sidebar.divider()
+    if st.sidebar.button("🔄 立即向證交所同步今日收盤", use_container_width=True):
+        with st.sidebar:
+            with st.spinner("正在向台灣證交所抓取最新收盤行情..."):
+                try:
+                    upserted, synced_dates = reader.quick_sync_latest(bt.db_path, force_today=True)
+                    if synced_dates:
+                        st.success(f"✅ 同步成功！已更新日期: {', '.join(synced_dates)} (共 {upserted:,} 筆)")
+                        st.rerun()
+                    else:
+                        st.info("💡 目前資料庫已是最新狀態（或證交所今日收盤資料尚未公布）。")
+                except Exception as e:
+                    st.error(f"同步失敗: {e}")
+
     with st.sidebar.expander("📊 數據庫狀態", expanded=False):
         try:
             db = DatabaseManager(bt.db_path)
