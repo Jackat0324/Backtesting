@@ -1,11 +1,7 @@
 name: Daily Data Update
 
 on:
-  schedule:
-    # 每個工作日 (週一至週五) 的下午 2:23 (CST) 執行 (避開整點/半點排程尖峰，且確保證交所盤後資料已出爐)
-    # UTC 6:23 = CST 14:23
-    - cron: '23 6 * * 1-5'
-  workflow_dispatch: # 允許手動觸發
+  workflow_dispatch: # 由外部定時器 (如 cron-job.org) 準時呼叫 API 觸發，或手動觸發
 
 permissions:
   contents: write
